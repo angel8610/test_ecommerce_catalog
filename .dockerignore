@@ -1,0 +1,100 @@
+# ============================================
+# GIT & VERSION CONTROL
+# ============================================
+.git
+.gitignore
+.gitattributes
+
+# ============================================
+# IDEs & EDITORS
+# ============================================
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.classpath
+.c9/
+
+# ============================================
+# BUILD & DEPENDENCIES
+# ============================================
+.env
+.env.*
+!.env.example
+
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+node_modules/
+dist/
+build/
+
+# Gradle (if added later)
+.gradle/
+build/
+
+# ============================================
+# LOGS & TEMP FILES
+# ============================================
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# ============================================
+# NODEJS / FRONTEND
+# ============================================
+frontend/**/node_modules/
+frontend/**/dist/
+frontend/**/.angular/
+frontend/**/.cache/
+frontend/**/npm-debug.log
+
+# ============================================
+# DOCKER FILES (exclude from context)
+# ============================================
+dockerfiles
+docker-compose.yml
+docker-compose.override.yml
+docker-compose.dev.yml
+.dockerignore
+
+# ============================================
+# DOCUMENTATION & CI
+# ============================================
+README.md
+HELP.md
+docs/
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# ============================================
+# TEST FILES (not needed in production)
+# ============================================
+src/test/
+*/src/test/
+**/*.test.js
+**/*.spec.ts
+
+# ============================================
+# INFRA FILES (optional monitoring)
+# ============================================
+prometheus/
+grafana/
+kubernetes/
+
+# ============================================
+# OS-SPECIFIC
+# ============================================
+.env.local
+.env.*.local
+.DS_Store
+Thumbs.db

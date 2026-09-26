@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: postgres-container
+    hostname: postgres
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend-ecommerce-image:
+    image: backend-ecommerce-image:1.0.0
+    build:
+      context: .
+      dockerfile: ./dockerfiles/ecommerce.Dockerfile
+    container_name: backend-ecommerce-container
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - ecommerce-network
+
+  frontend-ecommerce-imagen:
+    image: frontend-ecommerce-imagen:1.0.0
+    container_name: frontend-ecommerce-container
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend-ecommerce-image
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+
+volumes:
+  postgres_data:

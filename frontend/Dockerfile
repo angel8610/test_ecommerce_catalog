@@ -1,0 +1,15 @@
+FROM node:22-alpine AS build
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+COPY frontend/ ./
+RUN npm run build -- --configuration production
+
+FROM nginx:alpine
+
+COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
+
+EXPOSE 80
