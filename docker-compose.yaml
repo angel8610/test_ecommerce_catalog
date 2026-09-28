@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:17
     container_name: postgres-container
+    restart: always
     hostname: postgres
     ports:
       - "5432:5432"
@@ -15,7 +16,8 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./db/sql/create_schema.sql:/docker-entrypoint-initdb.d/create_schema.sql
+      - ./db/sql/data.sql:/docker-entrypoint-initdb.d/data.sql
 
   backend-ecommerce-image:
     image: backend-ecommerce-image:1.0.0
@@ -48,6 +50,3 @@ services:
 
 networks:
   ecommerce-network:
-
-volumes:
-  postgres_data:
