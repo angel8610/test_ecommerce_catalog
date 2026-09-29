@@ -1,6 +1,7 @@
 package com.example.ecommerce.catagol.infrastructure.config;
 
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
+import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
 import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
 import com.example.ecommerce.catagol.application.port.out.TokenProviderPort;
 import com.example.ecommerce.catagol.application.port.out.UserRepositoryPort;
@@ -20,8 +21,9 @@ public class BeanConfig {
   }
 
   @Bean
-  public GetProductUseCase productUseCase(ExternalCatalogPort externalCatalogPort) {
-    return new ProductService(externalCatalogPort);
+  public GetProductUseCase productUseCase(ExternalCatalogPort externalCatalogPort,
+                                          AuditLogRepositoryPort auditLogRepositoryPort) {
+    return new ProductService(externalCatalogPort, auditLogRepositoryPort);
   }
 
   @Bean

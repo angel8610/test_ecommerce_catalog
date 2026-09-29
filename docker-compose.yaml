@@ -16,6 +16,7 @@ services:
       timeout: 5s
       retries: 10
     volumes:
+      - ecommerce-volume:/var/lib/postgresql/data
       - ./db/sql/create_schema.sql:/docker-entrypoint-initdb.d/create_schema.sql
       - ./db/sql/data.sql:/docker-entrypoint-initdb.d/data.sql
 
@@ -50,3 +51,6 @@ services:
 
 networks:
   ecommerce-network:
+
+volumes:
+  ecommerce-volume:
