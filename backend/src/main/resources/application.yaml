@@ -17,3 +17,8 @@ security:
     issuer: "ecommerce-api"
     expiration: 900
     secret: ${JWT_SECRET}
+
+external:
+  api:
+    fake-store:
+      url: ${API_FAKE_STORE_URL}
