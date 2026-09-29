@@ -1,7 +1,9 @@
-package com.example.ecommerce.catagol.infrastructure.adapter.out.presistence;
+package com.example.ecommerce.catagol.infrastructure.adapter.out.persistence;
 
 import com.example.ecommerce.catagol.application.port.out.UserRepositoryPort;
 import com.example.ecommerce.catagol.domain.model.User;
+import com.example.ecommerce.catagol.infrastructure.adapter.out.persistence.repositories.SpingDataUserRepository;
+import com.example.ecommerce.catagol.infrastructure.adapter.out.persistence.mappers.UserPersistenceMapper;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;

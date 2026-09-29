@@ -2,24 +2,22 @@ package com.example.ecommerce.catagol.domain.model;
 
 import lombok.*;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class User {
+public class Role {
 
   @EqualsAndHashCode.Include
-  private Long id;
+  private Long roleId;
 
-  private String username;
+  private String name;
 
-  private String password;
+  private String description;
 
-  private List<Role> roles;
+  private Long userId;
 
 
 }

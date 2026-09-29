@@ -1,4 +1,4 @@
-package com.example.ecommerce.catagol.infrastructure.adapter.out.presistence;
+package com.example.ecommerce.catagol.infrastructure.adapter.out.persistence.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
