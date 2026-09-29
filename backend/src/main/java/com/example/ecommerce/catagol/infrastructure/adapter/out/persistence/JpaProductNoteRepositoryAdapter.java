@@ -6,6 +6,8 @@ import com.example.ecommerce.catagol.infrastructure.adapter.out.persistence.mapp
 import com.example.ecommerce.catagol.infrastructure.adapter.out.persistence.repositories.SpringDataProductNoteRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public class JpaProductNoteRepositoryAdapter implements ProductNoteRepositoryPort {
 
@@ -23,6 +25,13 @@ public class JpaProductNoteRepositoryAdapter implements ProductNoteRepositoryPor
     var productNoteEntity = this.springDataProductNoteRepository.save(
       this.productNotePersistenceMapper.mapToEntity(productNote));
     return this.productNotePersistenceMapper.mapToDomain(productNoteEntity);
+  }
+
+  @Override
+  public List<ProductNote> findAll() {
+    return this.springDataProductNoteRepository.findAll().stream()
+      .map(productNotePersistenceMapper::mapToDomain)
+      .toList();
   }
 
 

@@ -11,7 +11,8 @@ public record ProductResponse(
   BigDecimal price,
   String description,
   String category,
-  Rating rating
+  Rating rating,
+  String notes
 
 
 ) {
