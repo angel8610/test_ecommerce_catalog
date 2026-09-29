@@ -1,11 +1,9 @@
 package com.example.ecommerce.catagol.infrastructure.config;
 
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
-import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
-import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
-import com.example.ecommerce.catagol.application.port.out.TokenProviderPort;
-import com.example.ecommerce.catagol.application.port.out.UserRepositoryPort;
+import com.example.ecommerce.catagol.application.port.out.*;
 import com.example.ecommerce.catagol.application.service.AuthenticationService;
+import com.example.ecommerce.catagol.application.service.ProductNoteService;
 import com.example.ecommerce.catagol.application.service.ProductService;
 import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +29,11 @@ public class BeanConfig {
                                                      TokenProviderPort tokenProvider,
                                                      SecurityJwtConfig securityJwtConfig) {
     return new AuthenticationService(authenticationManager, tokenProvider, securityJwtConfig);
+  }
+
+  @Bean
+  public ProductNoteService productNoteService(ProductNoteRepositoryPort productNoteRepositoryPort) {
+    return new ProductNoteService(productNoteRepositoryPort);
   }
 
 
