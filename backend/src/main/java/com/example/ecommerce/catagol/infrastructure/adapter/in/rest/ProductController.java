@@ -2,6 +2,7 @@ package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
 import com.example.ecommerce.catagol.domain.model.Product;
+import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +23,7 @@ public class ProductController {
 
   @GetMapping(path = "/all")
   @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-  public ResponseEntity<List<Product>> getAll() {
+  public ResponseEntity<List<ProductResponse>> getAll() {
     var products = productUseCase.getEnrichedCatalog();
     return ResponseEntity.ok(products);
   }

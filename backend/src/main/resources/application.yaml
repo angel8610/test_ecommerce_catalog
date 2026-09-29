@@ -12,6 +12,26 @@ spring:
         ddl-auto: validate
       open-in-view: false
 
+resilience4j:
+  retry:
+    instances:
+      fakeStore:
+        maxAttempts: 3
+        waitDuration: 2s
+        # retryExceptions:
+        #   - org.springframework.web.client.ResourceAccessException
+
+  circuitbreaker:
+    instances:
+      backendService:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        slowCallRateThreshold: 75
+        slowCallDurationThreshold: 3s
+        waitDurationInOpenState: 15s
+        permittedNumberOfCallsInHalfOpenState: 3
+
 security:
   jwt:
     issuer: "ecommerce-api"
