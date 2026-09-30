@@ -12,7 +12,6 @@ import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductR
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,7 +49,7 @@ public class ProductService implements GetProductUseCase {
         ));
 
       return this.convertToListProductResponse(products, notesMap);
-    } catch (Exception e) {
+    } catch(Exception e) {
       status = "FAILED";
       throw e;
     } finally {
@@ -80,12 +79,12 @@ public class ProductService implements GetProductUseCase {
 
   private AuditLog getAuditLog(Long duration, String status) {
     return AuditLog.builder()
-      .endpointUrl("/product")
-      .httpMethod("GET")
-      .responseTimeMs(duration)
-      .errorMessage(status.equals("FAILED") ? "Error fetching products" : null)
-      .timestamp(LocalDateTime.from(ZonedDateTime.now()))
-      .statusResponse(status)
+      .operation("GET PRODUCTS API")
+      .durationMs(duration)
+      .error(status.equals("FAILED") ? "Error fetching products" : null)
+      .registerDate(LocalDateTime.now())
+      .status(status)
+      .createdBy("API")
       .build();
   }
 

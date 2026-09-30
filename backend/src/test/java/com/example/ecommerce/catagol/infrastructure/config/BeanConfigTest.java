@@ -6,8 +6,10 @@ import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryP
 import com.example.ecommerce.catagol.application.port.out.TokenProviderPort;
 import com.example.ecommerce.catagol.application.port.out.UserRepositoryPort;
 import com.example.ecommerce.catagol.application.service.AuthenticationService;
+import com.example.ecommerce.catagol.application.service.AuditLogService;
 import com.example.ecommerce.catagol.application.service.ProductNoteService;
 import com.example.ecommerce.catagol.application.service.ProductService;
+import com.example.ecommerce.catagol.domain.model.AuditLog;
 import com.example.ecommerce.catagol.domain.model.AuthenticatedUser;
 import com.example.ecommerce.catagol.domain.model.Product;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
@@ -18,6 +20,7 @@ import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateExcept
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteResponse;
+import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.AuditLogResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +35,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -209,7 +213,8 @@ class BeanConfigTest {
         return productNote;
       });
 
-    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort);
+    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
+      auditLogRepositoryPort);
     ProductNoteResponse response = productNoteService.saveProductNote(request);
 
     assertInstanceOf(ProductNoteService.class, productNoteService);
@@ -222,7 +227,8 @@ class BeanConfigTest {
     var request = new ProductNoteRequest(42L, "Durable material", "John Dave");
     var duplicateException = new ProductNoteDuplicateException("The Product Note is duplicate");
     when(productNoteRepositoryPort.save(any(ProductNote.class))).thenThrow(duplicateException);
-    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort);
+    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
+      auditLogRepositoryPort);
 
     var exception = assertThrows(ProductNoteDuplicateException.class,
       () -> productNoteService.saveProductNote(request)
@@ -231,4 +237,35 @@ class BeanConfigTest {
     assertSame(duplicateException, exception);
     verify(productNoteRepositoryPort).save(any(ProductNote.class));
   }
+
+  @Test
+  void createsAuditLogServiceConnectedToAuditLogRepository() {
+    var auditLog = AuditLog.builder()
+      .auditLogId(11L)
+      .operation("GET PRODUCTS API")
+      .status("SUCCESS")
+      .durationMs(42L)
+      .time(LocalDateTime.of(2026, 9, 29, 22, 0))
+      .user("API")
+      .build();
+    when(auditLogRepositoryPort.findAll()).thenReturn(List.of(auditLog));
+
+    AuditLogService auditLogService = beanConfig.auditLogService(auditLogRepositoryPort);
+
+    List<AuditLogResponse> responses = auditLogService.findAll();
+
+    assertInstanceOf(AuditLogService.class, auditLogService);
+    assertEquals(List.of(new AuditLogResponse(
+      11L,
+      "GET PRODUCTS API",
+      "SUCCESS",
+      42L,
+      LocalDateTime.of(2026, 9, 29, 22, 0),
+      "API",
+      null
+    )), responses);
+    verify(auditLogRepositoryPort).findAll();
+  }
+
+
 }

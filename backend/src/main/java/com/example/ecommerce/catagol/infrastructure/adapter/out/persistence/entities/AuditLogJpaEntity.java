@@ -18,27 +18,27 @@ public class AuditLogJpaEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long auditLogId;
 
-  @Column(name = "endpoint_url", nullable = false)
-  private String endpointUrl;
+  @Column(name = "operation_type", nullable = false, length = 100)
+  private String operation;
 
-  @Column(name = "http_method", nullable = false, length = 10)
-  private String httpMethod;
+  @Column(name = "status", nullable = false, length = 20)
+  private String status;
 
-  @Column(name = "status_response", nullable = false, length = 20)
-  private String statusResponse;
+  @Column(name = "duration_ms", nullable = false)
+  private Long durationMs;
 
-  @Column(name = "response_time_ms", nullable = false)
-  private Long responseTimeMs;
+  @Column(name = "regis_date", nullable = false)
+  private LocalDateTime registerDate;
 
-  @Column(name = "timestamp", nullable = false)
-  private LocalDateTime timestamp;
+  @Column(name = "created_by", nullable = false, length = 50)
+  private String createdBy;
 
-  @Column(name = "error_message", length = 500)
-  private String errorMessage;
+  @Column(name = "error", length = 500)
+  private String error;
 
   @PrePersist
   protected void onCreate() {
-    this.timestamp = LocalDateTime.now();
+    this.registerDate = LocalDateTime.now();
   }
 
 

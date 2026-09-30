@@ -13,12 +13,12 @@ public class AuditLogPersistenceMapper {
     }
 
     return AuditLogJpaEntity.builder()
-      .endpointUrl(auditLog.getEndpointUrl())
-      .errorMessage(auditLog.getErrorMessage())
-      .httpMethod(auditLog.getHttpMethod())
-      .responseTimeMs(auditLog.getResponseTimeMs())
-      .statusResponse(auditLog.getStatusResponse())
-      .timestamp(auditLog.getTimestamp())
+      .createdBy(auditLog.getCreatedBy())
+      .durationMs(auditLog.getDurationMs())
+      .error(auditLog.getError())
+      .operation(auditLog.getOperation())
+      .status(auditLog.getStatus())
+      .registerDate(auditLog.getRegisterDate())
       .build();
   }
 
@@ -29,12 +29,12 @@ public class AuditLogPersistenceMapper {
 
     return AuditLog.builder()
       .auditLogId(auditLogJpaEntity.getAuditLogId())
-      .endpointUrl(auditLogJpaEntity.getEndpointUrl())
-      .errorMessage(auditLogJpaEntity.getErrorMessage())
-      .httpMethod(auditLogJpaEntity.getHttpMethod())
-      .responseTimeMs(auditLogJpaEntity.getResponseTimeMs())
-      .statusResponse(auditLogJpaEntity.getStatusResponse())
-      .timestamp(auditLogJpaEntity.getTimestamp())
+      .createdBy(auditLogJpaEntity.getCreatedBy())
+      .durationMs(auditLogJpaEntity.getDurationMs())
+      .error(auditLogJpaEntity.getError())
+      .operation(auditLogJpaEntity.getOperation())
+      .registerDate(auditLogJpaEntity.getRegisterDate())
+      .status(auditLogJpaEntity.getStatus())
       .build();
   }
 

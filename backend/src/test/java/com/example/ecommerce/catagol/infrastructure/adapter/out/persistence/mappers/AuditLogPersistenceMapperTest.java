@@ -18,22 +18,22 @@ class AuditLogPersistenceMapperTest {
     var timestamp = LocalDateTime.of(2026, 9, 29, 15, 0);
     var auditLog = AuditLog.builder()
       .auditLogId(7L)
-      .endpointUrl("/product")
-      .httpMethod("GET")
-      .statusResponse("FAILED")
-      .responseTimeMs(125L)
-      .timestamp(timestamp)
-      .errorMessage("Catalog unavailable")
+      .operation("GET /product")
+      .status("FAILED")
+      .durationMs(125L)
+      .registerDate(timestamp)
+      .createdBy("catalog-user")
+      .error("Catalog unavailable")
       .build();
 
     AuditLogJpaEntity entity = mapper.mapToEntity(auditLog);
 
-    assertEquals("/product", entity.getEndpointUrl());
-    assertEquals("GET", entity.getHttpMethod());
-    assertEquals("FAILED", entity.getStatusResponse());
-    assertEquals(125L, entity.getResponseTimeMs());
-    assertEquals(timestamp, entity.getTimestamp());
-    assertEquals("Catalog unavailable", entity.getErrorMessage());
+    assertEquals("GET /product", entity.getOperation());
+    assertEquals("FAILED", entity.getStatus());
+    assertEquals(125L, entity.getDurationMs());
+    assertEquals(timestamp, entity.getRegisterDate());
+    assertEquals("catalog-user", entity.getCreatedBy());
+    assertEquals("Catalog unavailable", entity.getError());
   }
 
   @Test
@@ -46,23 +46,23 @@ class AuditLogPersistenceMapperTest {
     var timestamp = LocalDateTime.of(2026, 9, 29, 15, 0);
     var entity = AuditLogJpaEntity.builder()
       .auditLogId(7L)
-      .endpointUrl("/product")
-      .httpMethod("GET")
-      .statusResponse("FAILED")
-      .responseTimeMs(125L)
-      .timestamp(timestamp)
-      .errorMessage("Catalog unavailable")
+      .operation("GET /product")
+      .status("FAILED")
+      .durationMs(125L)
+      .registerDate(timestamp)
+      .createdBy("catalog-user")
+      .error("Catalog unavailable")
       .build();
 
     AuditLog auditLog = mapper.mapToDomain(entity);
 
     assertEquals(7L, auditLog.getAuditLogId());
-    assertEquals("/product", auditLog.getEndpointUrl());
-    assertEquals("GET", auditLog.getHttpMethod());
-    assertEquals("FAILED", auditLog.getStatusResponse());
-    assertEquals(125L, auditLog.getResponseTimeMs());
-    assertEquals(timestamp, auditLog.getTimestamp());
-    assertEquals("Catalog unavailable", auditLog.getErrorMessage());
+    assertEquals("GET /product", auditLog.getOperation());
+    assertEquals("FAILED", auditLog.getStatus());
+    assertEquals(125L, auditLog.getDurationMs());
+    assertEquals(timestamp, auditLog.getRegisterDate());
+    assertEquals("catalog-user", auditLog.getCreatedBy());
+    assertEquals("Catalog unavailable", auditLog.getError());
   }
 
   @Test

@@ -6,6 +6,8 @@ import com.example.ecommerce.catagol.infrastructure.adapter.out.persistence.mapp
 import com.example.ecommerce.catagol.infrastructure.adapter.out.persistence.repositories.SpringDataAuditLogRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public class JpaAuditLogRepositoryAdapter implements AuditLogRepositoryPort {
 
@@ -23,6 +25,13 @@ public class JpaAuditLogRepositoryAdapter implements AuditLogRepositoryPort {
     var auditLogEntity = this.springDataAuditLogRepository.save(
       this.auditLogPersistenceMapper.mapToEntity(auditLog));
     return this.auditLogPersistenceMapper.mapToDomain(auditLogEntity);
+  }
+
+  @Override
+  public List<AuditLog> findAll() {
+    return this.springDataAuditLogRepository.findAll().stream()
+      .map(auditLogPersistenceMapper::mapToDomain)
+      .toList();
   }
 
 

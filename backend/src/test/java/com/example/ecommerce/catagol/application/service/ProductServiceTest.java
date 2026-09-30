@@ -74,12 +74,12 @@ class ProductServiceTest {
     var auditLogCaptor = ArgumentCaptor.forClass(AuditLog.class);
     verify(auditLogRepositoryPort).save(auditLogCaptor.capture());
     var auditLog = auditLogCaptor.getValue();
-    assertEquals("/product", auditLog.getEndpointUrl());
-    assertEquals("GET", auditLog.getHttpMethod());
-    assertEquals("SUCCESS", auditLog.getStatusResponse());
-    assertNull(auditLog.getErrorMessage());
-    assertNotNull(auditLog.getTimestamp());
-    assertTrue(auditLog.getResponseTimeMs() >= 0);
+    assertEquals("GET PRODUCTS API", auditLog.getOperation());
+    assertEquals("SUCCESS", auditLog.getStatus());
+    assertEquals("API", auditLog.getCreatedBy());
+    assertNull(auditLog.getError());
+    assertNotNull(auditLog.getRegisterDate());
+    assertTrue(auditLog.getDurationMs() >= 0);
   }
 
   @Test
@@ -128,12 +128,12 @@ class ProductServiceTest {
     var auditLogCaptor = ArgumentCaptor.forClass(AuditLog.class);
     verify(auditLogRepositoryPort).save(auditLogCaptor.capture());
     var auditLog = auditLogCaptor.getValue();
-    assertEquals("/product", auditLog.getEndpointUrl());
-    assertEquals("GET", auditLog.getHttpMethod());
-    assertEquals("FAILED", auditLog.getStatusResponse());
-    assertEquals("Error fetching products", auditLog.getErrorMessage());
-    assertNotNull(auditLog.getTimestamp());
-    assertTrue(auditLog.getResponseTimeMs() >= 0);
+    assertEquals("GET PRODUCTS API", auditLog.getOperation());
+    assertEquals("FAILED", auditLog.getStatus());
+    assertEquals("API", auditLog.getCreatedBy());
+    assertEquals("Error fetching products", auditLog.getError());
+    assertNotNull(auditLog.getRegisterDate());
+    assertTrue(auditLog.getDurationMs() >= 0);
   }
 
   @Test

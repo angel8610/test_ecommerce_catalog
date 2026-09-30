@@ -2,6 +2,7 @@ package com.example.ecommerce.catagol.infrastructure.config;
 
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
 import com.example.ecommerce.catagol.application.port.out.*;
+import com.example.ecommerce.catagol.application.service.AuditLogService;
 import com.example.ecommerce.catagol.application.service.AuthenticationService;
 import com.example.ecommerce.catagol.application.service.ProductNoteService;
 import com.example.ecommerce.catagol.application.service.ProductService;
@@ -33,8 +34,14 @@ public class BeanConfig {
   }
 
   @Bean
-  public ProductNoteService productNoteService(ProductNoteRepositoryPort productNoteRepositoryPort) {
-    return new ProductNoteService(productNoteRepositoryPort);
+  public ProductNoteService productNoteService(ProductNoteRepositoryPort productNoteRepositoryPort,
+                                               AuditLogRepositoryPort auditLogRepositoryPort) {
+    return new ProductNoteService(productNoteRepositoryPort, auditLogRepositoryPort);
+  }
+
+  @Bean
+  public AuditLogService auditLogService(AuditLogRepositoryPort auditLogRepositoryPort) {
+    return new AuditLogService(auditLogRepositoryPort);
   }
 
 

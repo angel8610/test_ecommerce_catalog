@@ -15,17 +15,17 @@ public class AuditLog {
   @EqualsAndHashCode.Include
   private Long auditLogId;
 
-  private String endpointUrl;
+  private String operation;
 
-  private String httpMethod;
+  private String status;
 
-  private String statusResponse;
+  private Long durationMs;
 
-  private Long responseTimeMs;
+  private LocalDateTime registerDate;
 
-  private LocalDateTime timestamp;
+  private String createdBy;
 
-  private String errorMessage;
+  private String error;
 
 
 }
