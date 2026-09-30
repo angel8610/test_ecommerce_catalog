@@ -27,11 +27,11 @@ export class LoginComponent {
   readonly errorMessage = signal('');
 
   readonly loginForm = this.fb.nonNullable.group({
-    username: ['admin123', [
+    username: ['', [
       Validators.required,
       Validators.minLength(3)
     ]],
-    password: ['Admin123!', [
+    password: ['', [
       Validators.required,
       Validators.minLength(8)
     ]]
