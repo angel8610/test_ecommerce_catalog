@@ -9,6 +9,7 @@ import com.example.ecommerce.catagol.domain.model.AuditLog;
 import com.example.ecommerce.catagol.domain.model.Product;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
+import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.RatingResponse;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
@@ -64,13 +65,14 @@ public class ProductService implements GetProductUseCase {
     return products.stream()
       .map(product -> {
         String note = notesMap.getOrDefault(product.id(), "");
+        var rating = product.rating();
         return new ProductResponse(
           product.id(),
           product.title(),
           product.price(),
           product.description(),
           product.category(),
-          product.rating(),
+          new RatingResponse(rating.rate(), rating.count()),
           note
         );
       })

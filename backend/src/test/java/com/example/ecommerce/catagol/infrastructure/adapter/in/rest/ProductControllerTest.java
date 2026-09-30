@@ -2,8 +2,8 @@ package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
-import com.example.ecommerce.catagol.domain.model.Rating;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
+import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.RatingResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,13 +50,13 @@ class ProductControllerTest {
   void returnsOkWithAllProductsFromUseCase() {
     var products = List.of(
       new ProductResponse(1L, "Chair", new BigDecimal("49.99"), "Comfortable chair",
-        "Furniture", new Rating(4.5, 12), "Durable material"),
+        "Furniture", new RatingResponse(4.5, 12), "Durable material"),
       new ProductResponse(2L, "Table", new BigDecimal("89.50"), "Wooden table",
-        "Furniture", new Rating(4.2, 8), "")
+        "Furniture", new RatingResponse(4.2, 8), "")
     );
     when(productUseCase.getEnrichedCatalog()).thenReturn(products);
 
-    ResponseEntity<List<ProductResponse>> response = productController.getAll();
+    ResponseEntity<List<ProductResponse>> response = productController.findAll();
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(products, response.getBody());
@@ -67,7 +67,7 @@ class ProductControllerTest {
   void returnsOkWithEmptyListWhenUseCaseReturnsNoProducts() {
     when(productUseCase.getEnrichedCatalog()).thenReturn(List.of());
 
-    ResponseEntity<List<ProductResponse>> response = productController.getAll();
+    ResponseEntity<List<ProductResponse>> response = productController.findAll();
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(List.of(), response.getBody());
@@ -79,7 +79,7 @@ class ProductControllerTest {
     var emptyCatalogException = new EmptyProductAPIException("No results were obtained from the API.");
     when(productUseCase.getEnrichedCatalog()).thenThrow(emptyCatalogException);
 
-    var exception = assertThrows(EmptyProductAPIException.class, productController::getAll);
+    var exception = assertThrows(EmptyProductAPIException.class, productController::findAll);
 
     assertSame(emptyCatalogException, exception);
     verify(productUseCase).getEnrichedCatalog();
@@ -89,7 +89,7 @@ class ProductControllerTest {
   void returnsProductCatalogAsJsonWhenGetAllEndpointIsCalled() throws Exception {
     when(productUseCase.getEnrichedCatalog()).thenReturn(List.of(
       new ProductResponse(1L, "Chair", new BigDecimal("49.99"), "Comfortable chair",
-        "Furniture", new Rating(4.5, 12), "Durable material")
+        "Furniture", new RatingResponse(4.5, 12), "Durable material")
     ));
 
     mockMvc.perform(get("/api/v1/products/all"))

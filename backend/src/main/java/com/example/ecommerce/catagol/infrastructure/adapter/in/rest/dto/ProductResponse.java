@@ -1,7 +1,5 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto;
 
-import com.example.ecommerce.catagol.domain.model.Rating;
-
 import java.math.BigDecimal;
 
 public record ProductResponse(
@@ -11,8 +9,8 @@ public record ProductResponse(
   BigDecimal price,
   String description,
   String category,
-  Rating rating,
-  String notes
+  RatingResponse rating,
+  String note
 
 
 ) {

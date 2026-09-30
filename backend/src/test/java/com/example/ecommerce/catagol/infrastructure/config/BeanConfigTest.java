@@ -131,7 +131,7 @@ class BeanConfigTest {
     assertEquals(1, products.size());
     assertEquals(1L, products.get(0).id());
     assertEquals("Chair", products.get(0).title());
-    assertEquals("", products.get(0).notes());
+    assertEquals("", products.get(0).note());
     verify(externalCatalogPort).fetchAllProducts();
     verify(productNoteRepositoryPort).findAll();
     verify(auditLogRepositoryPort).save(any());
@@ -245,8 +245,8 @@ class BeanConfigTest {
       .operation("GET PRODUCTS API")
       .status("SUCCESS")
       .durationMs(42L)
-      .time(LocalDateTime.of(2026, 9, 29, 22, 0))
-      .user("API")
+      .registerDate(LocalDateTime.of(2026, 9, 29, 22, 0))
+      .createdBy("API")
       .build();
     when(auditLogRepositoryPort.findAll()).thenReturn(List.of(auditLog));
 

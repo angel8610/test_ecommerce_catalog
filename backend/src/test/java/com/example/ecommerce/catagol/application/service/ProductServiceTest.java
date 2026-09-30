@@ -9,6 +9,7 @@ import com.example.ecommerce.catagol.domain.model.Product;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.domain.model.Rating;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
+import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.RatingResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,9 +65,9 @@ class ProductServiceTest {
     assertEquals(
       List.of(
         new ProductResponse(1L, "Chair", new BigDecimal("49.99"), "Description 1",
-          "Furniture", new Rating(4.5, 12), "Comfortable"),
+          "Furniture", new RatingResponse(4.5, 12), "Comfortable"),
         new ProductResponse(2L, "Table", new BigDecimal("89.50"), "Description 2",
-          "Furniture", new Rating(4.5, 12), "")
+          "Furniture", new RatingResponse(4.5, 12), "")
       ),
       responses
     );
