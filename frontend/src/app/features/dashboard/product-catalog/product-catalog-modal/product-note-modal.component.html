@@ -8,9 +8,11 @@
       </div>
       <div class="modal-body">
         <dl class="row mb-3">
+          <dt class="col-sm-4">ID del producto</dt>
+          <dd class="col-sm-8">{{ product().id }}</dd>
           <dt class="col-sm-4">Producto</dt>
           <dd class="col-sm-8">{{ product().title }}</dd>
-          <dt class="col-sm-4">Categor&iacute;a</dt>
+          <dt class="col-sm-4">Categor&iacute&iacute;a</dt>
           <dd class="col-sm-8">{{ product().category }}</dd>
           <dt class="col-sm-4">Precio</dt>
           <dd class="col-sm-8">{{ product().price | currency:'USD' }}</dd>

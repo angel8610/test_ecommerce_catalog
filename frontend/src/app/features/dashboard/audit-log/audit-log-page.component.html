@@ -1,0 +1,23 @@
+<section aria-labelledby="audit-heading">
+  <div class="mb-4">
+    <h1 id="audit-heading" class="h3 mb-1">Auditor&iacute;a de transacciones</h1>
+    <p class="text-body-secondary mb-0">Registro de operaciones del sistema</p>
+  </div>
+
+  @if (loadState() === 'loading') {
+    <div class="alert alert-info mb-0" role="status">Cargando registros de auditor&iacute;a...</div>
+  } @else if (loadState() === 'error') {
+    <div class="alert alert-danger d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+      <span>No se pudieron cargar los registros de auditor&iacute;a.</span>
+      <button type="button" class="btn btn-outline-danger btn-sm" (click)="loadAuditLogs()">
+        Reintentar
+      </button>
+    </div>
+  } @else if (loadState() === 'loaded' && auditLogs().length === 0) {
+    <div class="alert alert-light border mb-0" role="status">
+      No hay registros de auditor&iacute;a disponibles.
+    </div>
+  } @else if (loadState() === 'loaded') {
+    <app-audit-log-table [auditLogs]="auditLogs()"></app-audit-log-table>
+  }
+</section>

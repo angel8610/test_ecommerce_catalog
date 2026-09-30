@@ -1,0 +1,6 @@
+.audit-error {
+  min-width: 14rem;
+  max-width: 24rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}

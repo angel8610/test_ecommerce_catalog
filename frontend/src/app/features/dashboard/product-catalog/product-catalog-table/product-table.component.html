@@ -1,5 +1,5 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-  <label for="productCategory" class="form-label mb-0">Filtrar por categoría</label>
+  <label for="productCategory" class="form-label mb-0">Filtrar por categor&iacute;a</label>
   <select id="productCategory" class="form-select w-auto" [value]="selectedCategory()"
       (change)="onCategoryChange($event)">
     <option value="">Todas las categor&iacute;as</option>
@@ -20,10 +20,10 @@
     <thead class="table-light">
       <tr>
         <th scope="col">Producto</th>
-        <th scope="col">Descripción</th>
-        <th scope="col">Categoría</th>
+        <th scope="col">Descripci&oacute;n</th>
+        <th scope="col">Categor&iacute&iacute;a</th>
         <th scope="col" class="text-end">Precio</th>
-        <th scope="col">Calificación</th>
+        <th scope="col">Calificaci&oacute&oacute;n</th>
         <th scope="col">Nota</th>
         <th scope="col">Acciones</th>
       </tr>
@@ -39,12 +39,12 @@
           <td class="text-end text-nowrap">{{ product.price | currency:'USD' }}</td>
           <td class="text-nowrap">
             {{ product.rating.rate }} / 5
-            <span class="d-block small text-body-secondary">{{ product.rating.count }} reseñas</span>
+            <span class="d-block small text-body-secondary">{{ product.rating.count }} rese&ntilde;as</span>
           </td>
-          <td>{{ noteFor(product) || '—' }}</td>
+          <td>@if(product.note) { {{ product.note }} } @else { &mdash; }</td>
           <td>
             <button type="button" class="btn btn-primary btn-sm note-action-button"
-                (click)="openModal(product)" [disabled]="!!noteFor(product).trim()">
+                (click)="noteRequested.emit(product)" [disabled]="hasNote(product)">
               Agregar nota
             </button>
           </td>
@@ -62,6 +62,6 @@
 
 @if(selectedProduct(); as product) {
   <app-product-note-modal [product]="product" [saving]="savingNote()" [errorMessage]="noteSaveError()"
-      (cancel)="closeModal()" (register)="onNoteRegister($event)">
+      (cancel)="cancelNote.emit()" (register)="noteRegistration.emit($event)">
   </app-product-note-modal>
 }

@@ -1,7 +1,7 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, input, output, signal } from '@angular/core';
 
-import { ProductResponse } from '../../../data/models/product-response.model';
+import { ProductResponse } from '../../../../data/models/product-response.model';
 
 export interface ProductNoteRegistration {
   product: ProductResponse;

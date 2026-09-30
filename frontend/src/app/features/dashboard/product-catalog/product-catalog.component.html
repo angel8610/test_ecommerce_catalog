@@ -1,0 +1,27 @@
+<section aria-labelledby="products-heading">
+  <div class="mb-4">
+    <h1 id="products-heading" class="h3 mb-1">Productos</h1>
+    <p class="text-body-secondary mb-0">Cat&aacute;logo de productos disponibles</p>
+  </div>
+
+  @if(loadState() === 'loading') {
+    <div class="alert alert-info mb-0" role="status">Cargando productos...</div>
+  } @else if (loadState() === 'error') {
+    <div class="alert alert-danger mb-0" role="alert">
+      No se pudieron cargar los productos. Intent&aacute; nuevamente m&aacute;s tarde.
+    </div>
+  } @else if (products().length === 0) {
+    <div class="alert alert-light border mb-0" role="status">No hay productos disponibles.</div>
+  } @else {
+    <app-product-table
+      [products]="products()"
+      [selectedProduct]="selectedProduct()"
+      [savingNote]="savingNote()"
+      [noteSaveError]="noteSaveError()"
+      [noteSaveSuccess]="noteSaveSuccess()"
+      (noteRequested)="openNote($event)"
+      (cancelNote)="closeNote()"
+      (noteRegistration)="registerNote($event)">
+    </app-product-table>
+  }
+</section>
