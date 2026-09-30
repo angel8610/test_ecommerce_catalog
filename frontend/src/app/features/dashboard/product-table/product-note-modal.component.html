@@ -1,0 +1,38 @@
+<div class="modal-backdrop fade show" aria-hidden="true"></div>
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true"
+    aria-labelledby="productNoteModalTitle">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="productNoteModalTitle">Registrar nota</h2>
+      </div>
+      <div class="modal-body">
+        <dl class="row mb-3">
+          <dt class="col-sm-4">Producto</dt>
+          <dd class="col-sm-8">{{ product().title }}</dd>
+          <dt class="col-sm-4">Categor&iacute;a</dt>
+          <dd class="col-sm-8">{{ product().category }}</dd>
+          <dt class="col-sm-4">Precio</dt>
+          <dd class="col-sm-8">{{ product().price | currency:'USD' }}</dd>
+        </dl>
+        <label for="productNote" class="form-label">Nota</label>
+        <input id="productNote" type="text" class="form-control" required [value]="note()"
+            maxlength="1000" [disabled]="saving()" (input)="onChangeNote($event)">
+        @if(errorMessage()) {
+          <div class="alert alert-danger mt-3 mb-0" role="alert" aria-live="assertive">
+            {{ errorMessage() }}
+          </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancel.emit()" [disabled]="saving()">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" (click)="registerNote()"
+            [disabled]="saving() || !note().trim()">
+          {{ saving() ? 'Guardando...' : 'Registrar nota' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

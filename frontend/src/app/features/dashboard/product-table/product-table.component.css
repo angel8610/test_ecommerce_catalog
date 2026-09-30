@@ -6,3 +6,15 @@
   min-width: 24rem;
   white-space: normal;
 }
+
+.note-action-button {
+  border-radius: 0.5rem;
+}
+
+.note-action-button:disabled {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+  color: #6c757d;
+  cursor: not-allowed;
+  opacity: 1;
+}

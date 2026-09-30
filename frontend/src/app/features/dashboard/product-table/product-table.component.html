@@ -2,7 +2,7 @@
   <label for="productCategory" class="form-label mb-0">Filtrar por categoría</label>
   <select id="productCategory" class="form-select w-auto" [value]="selectedCategory()"
       (change)="onCategoryChange($event)">
-    <option value="">Todas las categorías</option>
+    <option value="">Todas las categor&iacute;as</option>
     @for(category of categories(); track category) {
       <option [value]="category">{{ category }}</option>
     }
@@ -19,6 +19,7 @@
         <th scope="col" class="text-end">Precio</th>
         <th scope="col">Calificación</th>
         <th scope="col">Nota</th>
+        <th scope="col">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -34,15 +35,27 @@
             {{ product.rating.rate }} / 5
             <span class="d-block small text-body-secondary">{{ product.rating.count }} reseñas</span>
           </td>
-          <td>{{ product.note || '—' }}</td>
+          <td>{{ noteFor(product) || '—' }}</td>
+          <td>
+            <button type="button" class="btn btn-primary btn-sm note-action-button"
+                (click)="openModal(product)" [disabled]="!!noteFor(product).trim()">
+              Agregar nota
+            </button>
+          </td>
         </tr>
       } @empty {
         <tr>
-          <td colspan="6" class="py-4 text-center text-body-secondary">
-            No hay productos en esta categoría.
+          <td colspan="7" class="py-4 text-center text-body-secondary">
+            No hay productos en esta categor&iacute;a.
           </td>
         </tr>
       }
     </tbody>
   </table>
 </div>
+
+@if(selectedProduct(); as product) {
+  <app-product-note-modal [product]="product" [saving]="savingNote()" [errorMessage]="noteSaveError()"
+      (cancel)="closeModal()" (register)="onNoteRegister($event)">
+  </app-product-note-modal>
+}
