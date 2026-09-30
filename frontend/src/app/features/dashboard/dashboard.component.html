@@ -1,18 +1,27 @@
 <main class="dashboard-page">
-
   <header class="dashboard-header">
     <span class="dashboard-brand">SecurePortal</span>
-
-    <button
-      type="button"
-      class="logout-button"
-      (click)="logout()">
+    <button type="button" class="logout-button" (click)="logout()">
       Cerrar sesión
     </button>
   </header>
 
-  <section class="dashboard-content">
-    <!-- Página en blanco para futuras funcionalidades -->
-  </section>
+  <section class="dashboard-content container py-4">
+    <div class="mb-4">
+      <h1 class="h3 mb-1">Productos</h1>
+      <p class="text-body-secondary mb-0">Catálogo de productos disponibles</p>
+    </div>
 
+    @if(loadState() === 'loading') {
+      <div class="alert alert-info mb-0" role="status">Cargando productos...</div>
+    } @else if(loadState() === 'error') {
+      <div class="alert alert-danger mb-0" role="alert">
+        No se pudieron cargar los productos. Intentá nuevamente más tarde.
+      </div>
+    } @else if(products().length === 0) {
+      <div class="alert alert-light border mb-0" role="status">No hay productos disponibles.</div>
+    } @else {
+      <app-product-table [products]="products()"></app-product-table>
+    }
+  </section>
 </main>

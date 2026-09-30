@@ -1,0 +1,8 @@
+:host {
+  display: block;
+}
+
+.product-description {
+  min-width: 24rem;
+  white-space: normal;
+}
