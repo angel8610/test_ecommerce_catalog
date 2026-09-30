@@ -25,6 +25,7 @@ export class ProductTableComponent {
   public readonly selectedProduct = signal<ProductResponse | null>(null);
   public readonly savingNote = signal(false);
   public readonly noteSaveError = signal('');
+  public readonly noteSaveSuccess = signal('');
 
   private readonly savedNotes = signal<Record<number, string>>({});
   public readonly selectedCategory = signal('');
@@ -52,6 +53,7 @@ export class ProductTableComponent {
       return;
     }
     this.noteSaveError.set('');
+    this.noteSaveSuccess.set('');
     this.selectedProduct.set(product);
   }
 
@@ -81,11 +83,13 @@ export class ProductTableComponent {
     };
 
     this.noteSaveError.set('');
+    this.noteSaveSuccess.set('');
     this.savingNote.set(true);
     this.productNoteService.save(request).pipe(finalize(() => this.savingNote.set(false)))
       .subscribe({
         next: (response: ProductNoteResponse) => {
           this.savedNotes.update(notes => ({ ...notes, [product.id]: response.note }));
+          this.noteSaveSuccess.set(`La nota para "${product.title}" se guardó correctamente.`);
           this.selectedProduct.set(null);
         }, error: (error: unknown) => this.noteSaveError.set(this.getNoteSaveError(error))
       });
