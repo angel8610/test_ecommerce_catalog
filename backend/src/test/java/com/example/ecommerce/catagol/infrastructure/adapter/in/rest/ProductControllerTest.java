@@ -86,13 +86,13 @@ class ProductControllerTest {
   }
 
   @Test
-  void returnsProductCatalogAsJsonWhenGetAllEndpointIsCalled() throws Exception {
+  void returnsProductCatalogAsJsonWhenProductsEndpointIsCalled() throws Exception {
     when(productUseCase.getEnrichedCatalog()).thenReturn(List.of(
       new ProductResponse(1L, "Chair", new BigDecimal("49.99"), "Comfortable chair",
         "Furniture", new RatingResponse(4.5, 12), "Durable material")
     ));
 
-    mockMvc.perform(get("/api/v1/products/all"))
+    mockMvc.perform(get("/api/v1/products"))
       .andExpect(status().isOk())
       .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
       .andExpect(jsonPath("$[0].id").value(1))
@@ -102,16 +102,16 @@ class ProductControllerTest {
       .andExpect(jsonPath("$[0].category").value("Furniture"))
       .andExpect(jsonPath("$[0].rating.rate").value(4.5))
       .andExpect(jsonPath("$[0].rating.count").value(12))
-      .andExpect(jsonPath("$[0].notes").value("Durable material"));
+      .andExpect(jsonPath("$[0].note").value("Durable material"));
 
     verify(productUseCase).getEnrichedCatalog();
   }
 
   @Test
-  void returnsEmptyJsonArrayWhenGetAllEndpointHasNoProducts() throws Exception {
+  void returnsEmptyJsonArrayWhenProductsEndpointHasNoProducts() throws Exception {
     when(productUseCase.getEnrichedCatalog()).thenReturn(List.of());
 
-    mockMvc.perform(get("/api/v1/products/all"))
+    mockMvc.perform(get("/api/v1/products"))
       .andExpect(status().isOk())
       .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
       .andExpect(jsonPath("$").isEmpty());
@@ -120,11 +120,11 @@ class ProductControllerTest {
   }
 
   @Test
-  void returnsNotFoundWhenGetAllEndpointHasNoCatalogResults() throws Exception {
+  void returnsNotFoundWhenProductsEndpointHasNoCatalogResults() throws Exception {
     when(productUseCase.getEnrichedCatalog())
       .thenThrow(new EmptyProductAPIException("No results were obtained from the API."));
 
-    mockMvc.perform(get("/api/v1/products/all"))
+    mockMvc.perform(get("/api/v1/products"))
       .andExpect(status().isNotFound())
       .andExpect(content().string("No results were obtained from the API."));
 

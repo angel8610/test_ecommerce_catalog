@@ -92,7 +92,7 @@ class AuditLogControllerTest {
       .andExpect(jsonPath("$[0].operation").value("GET PRODUCTS API"))
       .andExpect(jsonPath("$[0].status").value("SUCCESS"))
       .andExpect(jsonPath("$[0].durationMs").value(42))
-      .andExpect(jsonPath("$[0].user").value("API"))
+      .andExpect(jsonPath("$[0].createdBy").value("API"))
       .andExpect(jsonPath("$[0].error").doesNotExist());
 
     verify(findAllAuditLogUseCase).findAll();

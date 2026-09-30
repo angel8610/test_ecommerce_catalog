@@ -41,8 +41,8 @@ class JpaAuditLogRepositoryAdapterTest {
       .operation("GET /product")
       .status("FAILED")
       .durationMs(125L)
-      .time(timestamp)
-      .user("catalog-user")
+      .registerDate(timestamp)
+      .createdBy("catalog-user")
       .error("Catalog unavailable")
       .build();
     when(springDataAuditLogRepository.save(any(AuditLogJpaEntity.class)))
@@ -58,8 +58,8 @@ class JpaAuditLogRepositoryAdapterTest {
     assertEquals("GET /product", savedAuditLog.getOperation());
     assertEquals("FAILED", savedAuditLog.getStatus());
     assertEquals(125L, savedAuditLog.getDurationMs());
-    assertEquals(timestamp, savedAuditLog.getTime());
-    assertEquals("catalog-user", savedAuditLog.getUser());
+    assertEquals(timestamp, savedAuditLog.getRegisterDate());
+    assertEquals("catalog-user", savedAuditLog.getCreatedBy());
     assertEquals("Catalog unavailable", savedAuditLog.getError());
 
     var entityCaptor = ArgumentCaptor.forClass(AuditLogJpaEntity.class);
@@ -68,8 +68,8 @@ class JpaAuditLogRepositoryAdapterTest {
     assertEquals("GET /product", persistedEntity.getOperation());
     assertEquals("FAILED", persistedEntity.getStatus());
     assertEquals(125L, persistedEntity.getDurationMs());
-    assertEquals(timestamp, persistedEntity.getTime());
-    assertEquals("catalog-user", persistedEntity.getUser());
+    assertEquals(timestamp, persistedEntity.getRegisterDate());
+    assertEquals("catalog-user", persistedEntity.getCreatedBy());
     assertEquals("Catalog unavailable", persistedEntity.getError());
   }
 
@@ -79,7 +79,7 @@ class JpaAuditLogRepositoryAdapterTest {
       .operation("GET /product")
       .status("SUCCESS")
       .durationMs(25L)
-      .time(LocalDateTime.of(2026, 9, 29, 15, 0))
+      .registerDate(LocalDateTime.of(2026, 9, 29, 15, 0))
       .build();
     var repositoryException = new IllegalStateException("Audit database unavailable");
     when(springDataAuditLogRepository.save(any(AuditLogJpaEntity.class)))
@@ -101,16 +101,16 @@ class JpaAuditLogRepositoryAdapterTest {
       .operation("GET /product")
       .status("SUCCESS")
       .durationMs(25L)
-      .time(firstTimestamp)
-      .user("catalog-user")
+      .registerDate(firstTimestamp)
+      .createdBy("catalog-user")
       .build();
     var secondEntity = AuditLogJpaEntity.builder()
       .auditLogId(2L)
       .operation("POST /product-note")
       .status("FAILED")
       .durationMs(40L)
-      .time(secondTimestamp)
-      .user("catalog-user")
+      .registerDate(secondTimestamp)
+      .createdBy("catalog-user")
       .error("Note storage unavailable")
       .build();
     when(springDataAuditLogRepository.findAll()).thenReturn(List.of(firstEntity, secondEntity));
@@ -121,7 +121,7 @@ class JpaAuditLogRepositoryAdapterTest {
     assertEquals(1L, auditLogs.get(0).getAuditLogId());
     assertEquals("GET /product", auditLogs.get(0).getOperation());
     assertEquals("SUCCESS", auditLogs.get(0).getStatus());
-    assertEquals(firstTimestamp, auditLogs.get(0).getTime());
+    assertEquals(firstTimestamp, auditLogs.get(0).getRegisterDate());
     assertEquals(2L, auditLogs.get(1).getAuditLogId());
     assertEquals("POST /product-note", auditLogs.get(1).getOperation());
     assertEquals("FAILED", auditLogs.get(1).getStatus());
