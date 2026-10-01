@@ -7,9 +7,9 @@ spring:
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-    jpa:
-      hibernate:
-        ddl-auto: validate
+  jpa:
+    hibernate:
+      ddl-auto: validate
       open-in-view: false
 
 resilience4j:
@@ -23,7 +23,7 @@ resilience4j:
 
   circuitbreaker:
     instances:
-      backendService:
+      fakeStore:
         slidingWindowType: COUNT_BASED
         slidingWindowSize: 10
         failureRateThreshold: 50

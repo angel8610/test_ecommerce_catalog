@@ -32,7 +32,7 @@ CREATE TABLE audit_logs (
     status            VARCHAR(20)  NOT NULL,
     duration_ms       BIGINT       NOT NULL,
     regis_date        TIMESTAMP(6) NOT NULL,
-    created_by        VARCHAR(20)  NOT NULL,
+    created_by        VARCHAR(50)  NOT NULL,
     error             VARCHAR(500),
     CONSTRAINT pk_audit_logs PRIMARY KEY (audit_log_id),
     CONSTRAINT ck_audit_logs_duration_non_negative CHECK (duration_ms >= 0),
