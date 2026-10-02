@@ -1,6 +1,8 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
+import com.example.ecommerce.catagol.application.model.Login;
 import com.example.ecommerce.catagol.application.port.in.AuthenticateUserUseCase;
+import com.example.ecommerce.catagol.application.port.in.LoginCommand;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception.GlobalExceptionHandler;
@@ -52,35 +54,39 @@ class AuthControllerTest {
 
   @Test
   void returnsOkWithLoginResponseWhenAuthenticationSucceeds() {
-    var request = new LoginRequest("jane.doe", "correct-password");
-    var loginResponse = new LoginResponse("signed-jwt", "Bearer", 900L);
-    when(authenticateUserUseCase.authenticate(request)).thenReturn(loginResponse);
+    var loginRequest = new LoginRequest("jane.doe", "correct-password");
+    var loginCommand = new LoginCommand(loginRequest.username(), loginRequest.password());
+    var login = new Login("signed-jwt", "Bearer", 900L);
+    var loginResponse = new LoginResponse(login.accessToken(), login.tokenType(), login.expiresIn());
+    when(authenticateUserUseCase.authenticate(loginCommand)).thenReturn(login);
 
-    ResponseEntity<LoginResponse> response = authController.login(request);
+    ResponseEntity<LoginResponse> response = authController.login(loginRequest);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertEquals(loginResponse, response.getBody());
-    verify(authenticateUserUseCase).authenticate(request);
+    verify(authenticateUserUseCase).authenticate(loginCommand);
   }
 
   @Test
   void propagatesAuthenticationErrorWhenCredentialsAreInvalid() {
-    var request = new LoginRequest("jane.doe", "incorrect-password");
+    var loginRequest = new LoginRequest("jane.doe", "incorrect-password");
+    var loginCommand = new LoginCommand(loginRequest.username(), loginRequest.password());
     var authenticationException = new BadCredentialsException("Invalid credentials");
-    when(authenticateUserUseCase.authenticate(request)).thenThrow(authenticationException);
+    when(authenticateUserUseCase.authenticate(loginCommand)).thenThrow(authenticationException);
 
     var exception = assertThrows(BadCredentialsException.class,
-      () -> authController.login(request));
+      () -> authController.login(loginRequest));
 
     assertSame(authenticationException, exception);
-    verify(authenticateUserUseCase).authenticate(request);
+    verify(authenticateUserUseCase).authenticate(loginCommand);
   }
 
   @Test
   void returnsTokenAsJsonWhenLoginEndpointReceivesValidRequest() throws Exception {
-    var request = new LoginRequest("jane.doe", "correct-password");
-    when(authenticateUserUseCase.authenticate(request))
-      .thenReturn(new LoginResponse("signed-jwt", "Bearer", 900L));
+    var loginRequest = new LoginRequest("jane.doe", "correct-password");
+    var loginCommand = new LoginCommand(loginRequest.username(), loginRequest.password());
+    when(authenticateUserUseCase.authenticate(loginCommand))
+      .thenReturn(new Login("signed-jwt", "Bearer", 900L));
 
     mockMvc.perform(post("/api/auth/login")
         .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +102,7 @@ class AuthControllerTest {
       .andExpect(jsonPath("$.tokenType").value("Bearer"))
       .andExpect(jsonPath("$.expiresIn").value(900));
 
-    verify(authenticateUserUseCase).authenticate(request);
+    verify(authenticateUserUseCase).authenticate(loginCommand);
   }
 
   @Test
@@ -121,7 +127,7 @@ class AuthControllerTest {
 
   @Test
   void returnsNotFoundWhenLoginUseCaseRejectsUnknownUsername() throws Exception {
-    when(authenticateUserUseCase.authenticate(any(LoginRequest.class)))
+    when(authenticateUserUseCase.authenticate(any(LoginCommand.class)))
       .thenThrow(new UsernameNotFoundException("Invalid credentials"));
 
     mockMvc.perform(post("/api/auth/login")
@@ -135,7 +141,8 @@ class AuthControllerTest {
       .andExpect(status().isNotFound())
       .andExpect(content().string("Invalid credentials"));
 
-    verify(authenticateUserUseCase).authenticate(new LoginRequest("unknown", "some-password"));
+    verify(authenticateUserUseCase).authenticate(
+      new LoginCommand("unknown", "some-password"));
   }
 
 

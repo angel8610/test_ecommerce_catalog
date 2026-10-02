@@ -1,4 +1,4 @@
-package com.example.ecommerce.catagol.domain.model;
+package com.example.ecommerce.catagol.application.model;
 
 import java.util.Set;
 

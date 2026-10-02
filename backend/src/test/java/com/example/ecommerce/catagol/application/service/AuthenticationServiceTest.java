@@ -1,9 +1,9 @@
 package com.example.ecommerce.catagol.application.service;
 
+import com.example.ecommerce.catagol.application.model.AuthenticatedUser;
+import com.example.ecommerce.catagol.application.model.Login;
+import com.example.ecommerce.catagol.application.port.in.LoginCommand;
 import com.example.ecommerce.catagol.application.port.out.TokenProviderPort;
-import com.example.ecommerce.catagol.domain.model.AuthenticatedUser;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginResponse;
 import com.example.ecommerce.catagol.infrastructure.config.SecurityJwtConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,16 +53,16 @@ class AuthenticationServiceTest {
 
   @Test
   void authenticatesUserAndReturnsBearerTokenWithConfiguredExpiration() {
-    var request = new LoginRequest("loginUser", "correctPassword");
+    var request = new LoginCommand("loginUser", "correctPassword");
     var authentication = authenticatedUser("verifiedUser", "ROLE_ADMIN", "ROLE_USER");
 
     when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);
     when(tokenProvider.generateToken(any(AuthenticatedUser.class))).thenReturn("signed-token");
     when(securityJwtConfig.getExpiration()).thenReturn(3600L);
 
-    LoginResponse response = authenticationService.authenticate(request);
+    Login response = authenticationService.authenticate(request);
 
-    assertEquals(new LoginResponse("signed-token", "Bearer", 3600L), response);
+    assertEquals(new Login("signed-token", "Bearer", 3600L), response);
 
     var authenticationCaptor = ArgumentCaptor.forClass(Authentication.class);
     verify(authenticationManager).authenticate(authenticationCaptor.capture());
@@ -80,15 +80,15 @@ class AuthenticationServiceTest {
 
   @Test
   void createsAuthenticatedUserWithNoRolesWhenAuthenticationHasNoAuthorities() {
-    var request = new LoginRequest("loginUser", "correctPassword");
+    var request = new LoginCommand("loginUser", "correctPassword");
     var authentication = authenticatedUser("verifiedUser");
     when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);
     when(tokenProvider.generateToken(any(AuthenticatedUser.class))).thenReturn("signed-token");
     when(securityJwtConfig.getExpiration()).thenReturn(1200L);
 
-    LoginResponse response = authenticationService.authenticate(request);
+    Login response = authenticationService.authenticate(request);
 
-    assertEquals(new LoginResponse("signed-token", "Bearer", 1200L), response);
+    assertEquals(new Login("signed-token", "Bearer", 1200L), response);
     var userCaptor = ArgumentCaptor.forClass(AuthenticatedUser.class);
     verify(tokenProvider).generateToken(userCaptor.capture());
     assertEquals(Set.of(), userCaptor.getValue().roles());
@@ -96,7 +96,7 @@ class AuthenticationServiceTest {
 
   @Test
   void propagatesAuthenticationFailuresWithoutGeneratingToken() {
-    var request = new LoginRequest("loginUser", "incorrectPassword");
+    var request = new LoginCommand("loginUser", "incorrectPassword");
     var authenticationException = new BadCredentialsException("Invalid credentials");
     when(authenticationManager.authenticate(any(Authentication.class)))
       .thenThrow(authenticationException);
@@ -110,7 +110,7 @@ class AuthenticationServiceTest {
 
   @Test
   void propagatesTokenGenerationFailuresAfterSuccessfulAuthentication() {
-    var request = new LoginRequest("loginUser", "correctPassword");
+    var request = new LoginCommand("loginUser", "correctPassword");
     var authentication = authenticatedUser("verifiedUser", "ROLE_USER");
     var tokenException = new IllegalStateException("Token signing failed");
     when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);

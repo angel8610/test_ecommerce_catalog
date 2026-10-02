@@ -1,6 +1,7 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
 import com.example.ecommerce.catagol.application.port.in.AuthenticateUserUseCase;
+import com.example.ecommerce.catagol.application.port.in.LoginCommand;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginResponse;
 import jakarta.validation.Valid;
@@ -20,7 +21,14 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-    var loginResponse = authenticateUserUseCase.authenticate(loginRequest);
+    var loginCommand = new LoginCommand(loginRequest.username(), loginRequest.password());
+    var login = authenticateUserUseCase.authenticate(loginCommand);
+
+    var loginResponse = new LoginResponse(
+      login.accessToken(),
+      login.tokenType(),
+      login.expiresIn()
+    );
     return ResponseEntity.ok(loginResponse);
   }
 

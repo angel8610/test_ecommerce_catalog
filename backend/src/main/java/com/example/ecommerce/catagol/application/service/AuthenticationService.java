@@ -1,10 +1,10 @@
 package com.example.ecommerce.catagol.application.service;
 
+import com.example.ecommerce.catagol.application.model.AuthenticatedUser;
+import com.example.ecommerce.catagol.application.model.Login;
 import com.example.ecommerce.catagol.application.port.in.AuthenticateUserUseCase;
+import com.example.ecommerce.catagol.application.port.in.LoginCommand;
 import com.example.ecommerce.catagol.application.port.out.TokenProviderPort;
-import com.example.ecommerce.catagol.domain.model.AuthenticatedUser;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginResponse;
 import com.example.ecommerce.catagol.infrastructure.config.SecurityJwtConfig;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,9 +28,9 @@ public class AuthenticationService implements AuthenticateUserUseCase {
   }
 
   @Override
-  public LoginResponse authenticate(LoginRequest loginRequest) {
+  public Login authenticate(LoginCommand loginCommand) {
     Authentication authentication = authenticationManager.authenticate(
-      new UsernamePasswordAuthenticationToken(loginRequest.username(), loginRequest.password()));
+      new UsernamePasswordAuthenticationToken(loginCommand.username(), loginCommand.password()));
     Set<String> roles = authentication.getAuthorities()
       .stream()
       .map(GrantedAuthority::getAuthority)
@@ -43,7 +43,7 @@ public class AuthenticationService implements AuthenticateUserUseCase {
     );
 
     var token = tokenProvider.generateToken(user);
-    return new LoginResponse(token, "Bearer", securityJwtConfig.getExpiration());
+    return new Login(token, "Bearer", securityJwtConfig.getExpiration());
   }
 
 

@@ -1,7 +1,9 @@
 package com.example.ecommerce.catagol.infrastructure.config;
 
+import com.example.ecommerce.catagol.application.model.AuthenticatedUser;
 import com.example.ecommerce.catagol.application.model.Product;
 import com.example.ecommerce.catagol.application.model.Rating;
+import com.example.ecommerce.catagol.application.port.in.LoginCommand;
 import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
 import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
 import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
@@ -13,12 +15,10 @@ import com.example.ecommerce.catagol.application.service.AuditLogService;
 import com.example.ecommerce.catagol.application.service.ProductNoteService;
 import com.example.ecommerce.catagol.application.service.ProductService;
 import com.example.ecommerce.catagol.domain.model.AuditLog;
-import com.example.ecommerce.catagol.domain.model.AuthenticatedUser;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.domain.model.User;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -169,7 +169,7 @@ class BeanConfigTest {
       jwtConfig
     );
     var response = authenticationService.authenticate(
-      new LoginRequest("jane.doe", "correct-password")
+      new LoginCommand("jane.doe", "correct-password")
     );
 
     assertInstanceOf(AuthenticationService.class, authenticationService);
@@ -194,7 +194,7 @@ class BeanConfigTest {
     );
 
     var exception = assertThrows(BadCredentialsException.class,
-      () -> authenticationService.authenticate(new LoginRequest("jane.doe", "wrong-password"))
+      () -> authenticationService.authenticate(new LoginCommand("jane.doe", "wrong-password"))
     );
 
     assertSame(authenticationException, exception);

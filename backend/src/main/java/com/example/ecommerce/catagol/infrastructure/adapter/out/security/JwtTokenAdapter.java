@@ -1,7 +1,7 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.out.security;
 
+import com.example.ecommerce.catagol.application.model.AuthenticatedUser;
 import com.example.ecommerce.catagol.application.port.out.TokenProviderPort;
-import com.example.ecommerce.catagol.domain.model.AuthenticatedUser;
 import com.example.ecommerce.catagol.infrastructure.config.SecurityJwtConfig;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;

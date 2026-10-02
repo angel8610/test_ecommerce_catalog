@@ -1,6 +1,6 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.out.security;
 
-import com.example.ecommerce.catagol.domain.model.AuthenticatedUser;
+import com.example.ecommerce.catagol.application.model.AuthenticatedUser;
 import com.example.ecommerce.catagol.infrastructure.config.SecurityJwtConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
