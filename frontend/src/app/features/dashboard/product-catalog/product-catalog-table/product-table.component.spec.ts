@@ -44,6 +44,8 @@ describe('ProductTableComponent', () => {
     expect(rows[0].cells[1].textContent?.trim()).toHaveLength(153);
     expect(rows[0].cells[1].textContent?.trim().endsWith('...')).toBe(true);
     expect(rows[1].querySelector('.note-action-button')?.hasAttribute('disabled')).toBe(true);
+    expect(element.querySelector('.product-table-scroll')?.classList.contains('table-responsive'))
+      .toBe(true);
 
     const category = element.querySelector<HTMLSelectElement>('#productCategory')!;
     category.value = 'Other category';

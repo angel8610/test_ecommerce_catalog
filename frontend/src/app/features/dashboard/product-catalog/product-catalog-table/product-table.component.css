@@ -2,9 +2,20 @@
   display: block;
 }
 
+.product-table-scroll {
+  height: 32rem;
+  overflow-y: auto;
+}
+
 .product-description {
   min-width: 24rem;
   white-space: normal;
+}
+
+.product-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .note-action-button {
