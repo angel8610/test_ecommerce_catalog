@@ -1,12 +1,12 @@
 package com.example.ecommerce.catagol.application.port.in;
 
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
+import com.example.ecommerce.catagol.application.model.ProductCatalogItem;
 
 import java.util.List;
 
 public interface GetProductUseCase {
 
-  List<ProductResponse> getEnrichedCatalog();
+  List<ProductCatalogItem> getEnrichedCatalog();
 
 
 }

@@ -1,5 +1,8 @@
 package com.example.ecommerce.catagol.infrastructure.config;
 
+import com.example.ecommerce.catagol.application.model.Product;
+import com.example.ecommerce.catagol.application.model.Rating;
+import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
 import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
 import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
@@ -11,16 +14,11 @@ import com.example.ecommerce.catagol.application.service.ProductNoteService;
 import com.example.ecommerce.catagol.application.service.ProductService;
 import com.example.ecommerce.catagol.domain.model.AuditLog;
 import com.example.ecommerce.catagol.domain.model.AuthenticatedUser;
-import com.example.ecommerce.catagol.domain.model.Product;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
-import com.example.ecommerce.catagol.domain.model.Rating;
 import com.example.ecommerce.catagol.domain.model.User;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteRequest;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteResponse;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.AuditLogResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -205,7 +203,8 @@ class BeanConfigTest {
 
   @Test
   void createsProductNoteServiceConnectedToProductNoteRepository() {
-    var request = new ProductNoteRequest(42L, "Durable material", "John Dave");
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material",
+      "John Dave");
     when(productNoteRepositoryPort.save(any(ProductNote.class)))
       .thenAnswer(invocation -> {
         ProductNote productNote = invocation.getArgument(0);
@@ -215,23 +214,30 @@ class BeanConfigTest {
 
     ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
       auditLogRepositoryPort);
-    ProductNoteResponse response = productNoteService.saveProductNote(request);
+    ProductNote savedProductNote = productNoteService.saveProductNote(productNoteCreateCommand);
 
+    var productNote = ProductNote.builder()
+      .createdBy("John Dave")
+      .note("Durable material")
+      .extProdId(42L)
+      .noteId(7L)
+      .build();
     assertInstanceOf(ProductNoteService.class, productNoteService);
-    assertEquals(new ProductNoteResponse(7L, 42L, "Durable material", "John Dave"), response);
+    assertEquals(productNote, savedProductNote);
     verify(productNoteRepositoryPort).save(any(ProductNote.class));
   }
 
   @Test
   void productNoteServicePropagatesDuplicateNoteFailures() {
-    var request = new ProductNoteRequest(42L, "Durable material", "John Dave");
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material",
+      "John Dave");
     var duplicateException = new ProductNoteDuplicateException("The Product Note is duplicate");
     when(productNoteRepositoryPort.save(any(ProductNote.class))).thenThrow(duplicateException);
     ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
       auditLogRepositoryPort);
 
     var exception = assertThrows(ProductNoteDuplicateException.class,
-      () -> productNoteService.saveProductNote(request)
+      () -> productNoteService.saveProductNote(productNoteCreateCommand)
     );
 
     assertSame(duplicateException, exception);
@@ -252,10 +258,12 @@ class BeanConfigTest {
 
     AuditLogService auditLogService = beanConfig.auditLogService(auditLogRepositoryPort);
 
-    List<AuditLogResponse> responses = auditLogService.findAll();
+    List<AuditLog> responses = auditLogService.findAll();
 
     assertInstanceOf(AuditLogService.class, auditLogService);
-    assertEquals(List.of(new AuditLogResponse(
+    assertEquals(
+
+      List.of(new AuditLog(
       11L,
       "GET PRODUCTS API",
       "SUCCESS",

@@ -1,15 +1,14 @@
 package com.example.ecommerce.catagol.application.service;
 
+import com.example.ecommerce.catagol.application.model.Product;
+import com.example.ecommerce.catagol.application.model.ProductCatalogItem;
+import com.example.ecommerce.catagol.application.model.Rating;
 import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
 import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.domain.model.AuditLog;
-import com.example.ecommerce.catagol.domain.model.Product;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
-import com.example.ecommerce.catagol.domain.model.Rating;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.RatingResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,14 +59,14 @@ class ProductServiceTest {
       createProductNote(3L, "Note for another product")
     ));
 
-    List<ProductResponse> responses = productService.getEnrichedCatalog();
+    List<ProductCatalogItem> responses = productService.getEnrichedCatalog();
 
     assertEquals(
       List.of(
-        new ProductResponse(1L, "Chair", new BigDecimal("49.99"), "Description 1",
-          "Furniture", new RatingResponse(4.5, 12), "Comfortable"),
-        new ProductResponse(2L, "Table", new BigDecimal("89.50"), "Description 2",
-          "Furniture", new RatingResponse(4.5, 12), "")
+        new ProductCatalogItem(1L, "Chair", new BigDecimal("49.99"), "Description 1",
+          "Furniture", new Rating(4.5, 12), "Comfortable"),
+        new ProductCatalogItem(2L, "Table", new BigDecimal("89.50"), "Description 2",
+          "Furniture", new Rating(4.5, 12), "")
       ),
       responses
     );

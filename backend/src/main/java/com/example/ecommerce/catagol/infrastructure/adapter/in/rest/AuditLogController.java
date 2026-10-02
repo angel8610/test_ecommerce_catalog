@@ -22,7 +22,18 @@ public class AuditLogController {
   @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
   public ResponseEntity<List<AuditLogResponse>> findAll() {
     var auditLogs = this.findAllAuditLogUseCase.findAll();
-    return ResponseEntity.ok(auditLogs);
+    var auditLogResponses = auditLogs.stream()
+      .map(auditLog -> new AuditLogResponse(
+        auditLog.getAuditLogId(),
+        auditLog.getOperation(),
+        auditLog.getStatus(),
+        auditLog.getDurationMs(),
+        auditLog.getRegisterDate(),
+        auditLog.getCreatedBy(),
+        auditLog.getError()
+      ))
+      .toList();
+    return ResponseEntity.ok(auditLogResponses);
   }
 
 

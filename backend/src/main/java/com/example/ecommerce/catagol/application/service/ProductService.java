@@ -1,15 +1,15 @@
 package com.example.ecommerce.catagol.application.service;
 
+import com.example.ecommerce.catagol.application.model.Product;
+import com.example.ecommerce.catagol.application.model.ProductCatalogItem;
+import com.example.ecommerce.catagol.application.model.Rating;
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
 import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
 import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.domain.model.AuditLog;
-import com.example.ecommerce.catagol.domain.model.Product;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.RatingResponse;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
@@ -32,7 +32,7 @@ public class ProductService implements GetProductUseCase {
   }
 
   @Override
-  public List<ProductResponse> getEnrichedCatalog() {
+  public List<ProductCatalogItem> getEnrichedCatalog() {
     long startTime = System.currentTimeMillis();
     String status = "SUCCESS";
 
@@ -60,19 +60,19 @@ public class ProductService implements GetProductUseCase {
     }
   }
 
-  private List<ProductResponse> convertToListProductResponse(List<Product> products,
+  private List<ProductCatalogItem> convertToListProductResponse(List<Product> products,
                                                              Map<Long, String> notesMap) {
     return products.stream()
       .map(product -> {
         String note = notesMap.getOrDefault(product.id(), "");
         var rating = product.rating();
-        return new ProductResponse(
+        return new ProductCatalogItem(
           product.id(),
           product.title(),
           product.price(),
           product.description(),
           product.category(),
-          new RatingResponse(rating.rate(), rating.count()),
+          new Rating(rating.rate(), rating.count()),
           note
         );
       })

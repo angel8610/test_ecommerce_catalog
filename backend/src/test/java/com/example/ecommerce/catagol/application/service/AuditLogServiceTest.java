@@ -2,7 +2,6 @@ package com.example.ecommerce.catagol.application.service;
 
 import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
 import com.example.ecommerce.catagol.domain.model.AuditLog;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.AuditLogResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,11 +52,12 @@ class AuditLogServiceTest {
     when(auditLogRepositoryPort.findAll())
       .thenReturn(List.of(firstAuditLog, secondAuditLog));
 
-    List<AuditLogResponse> responses = auditLogService.findAll();
+    List<AuditLog> responses = auditLogService.findAll();
 
     assertEquals(List.of(
-      new AuditLogResponse(1L, "GET PRODUCTS API", "SUCCESS", 42L, firstTime, "API", null),
-      new AuditLogResponse(2L, "SAVE PRODUCT NOTE", "FAILED", 75L, secondTime,
+      new AuditLog(1L, "GET PRODUCTS API", "SUCCESS", 42L, firstTime,
+        "API", null),
+      new AuditLog(2L, "SAVE PRODUCT NOTE", "FAILED", 75L, secondTime,
         "REGISTER", "Error saving product note")
     ), responses);
     verify(auditLogRepositoryPort).findAll();
@@ -67,7 +67,7 @@ class AuditLogServiceTest {
   void returnsEmptyListWhenRepositoryHasNoAuditLogs() {
     when(auditLogRepositoryPort.findAll()).thenReturn(List.of());
 
-    List<AuditLogResponse> responses = auditLogService.findAll();
+    List<AuditLog> responses = auditLogService.findAll();
 
     assertEquals(List.of(), responses);
     verify(auditLogRepositoryPort).findAll();

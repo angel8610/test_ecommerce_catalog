@@ -1,7 +1,7 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.out.external;
 
-import com.example.ecommerce.catagol.domain.model.Product;
-import com.example.ecommerce.catagol.domain.model.Rating;
+import com.example.ecommerce.catagol.application.model.Product;
+import com.example.ecommerce.catagol.application.model.Rating;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

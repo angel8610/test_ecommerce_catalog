@@ -1,10 +1,8 @@
 package com.example.ecommerce.catagol.domain.model;
 
-import jakarta.persistence.Column;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @Setter

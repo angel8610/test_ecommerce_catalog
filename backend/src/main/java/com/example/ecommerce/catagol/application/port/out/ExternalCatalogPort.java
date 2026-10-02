@@ -1,6 +1,6 @@
 package com.example.ecommerce.catagol.application.port.out;
 
-import com.example.ecommerce.catagol.domain.model.Product;
+import com.example.ecommerce.catagol.application.model.Product;
 
 import java.util.List;
 

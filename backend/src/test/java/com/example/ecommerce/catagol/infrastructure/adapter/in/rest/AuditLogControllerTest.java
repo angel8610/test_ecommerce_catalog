@@ -1,6 +1,7 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
 import com.example.ecommerce.catagol.application.port.in.FindAllAuditLogUseCase;
+import com.example.ecommerce.catagol.domain.model.AuditLog;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.AuditLogResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,17 +43,29 @@ class AuditLogControllerTest {
   @Test
   void returnsOkWithAllAuditLogs() {
     var auditLogs = List.of(
-      new AuditLogResponse(1L, "GET PRODUCTS API", "SUCCESS", 42L,
+      new AuditLog(1L, "GET PRODUCTS API", "SUCCESS", 42L,
         LocalDateTime.of(2026, 9, 29, 22, 0), "API", null),
-      new AuditLogResponse(2L, "SAVE PRODUCT NOTE", "FAILED", 75L,
+      new AuditLog(2L, "SAVE PRODUCT NOTE", "FAILED", 75L,
         LocalDateTime.of(2026, 9, 29, 22, 1), "REGISTER", "Error saving product note")
     );
     when(findAllAuditLogUseCase.findAll()).thenReturn(auditLogs);
 
     ResponseEntity<List<AuditLogResponse>> response = auditLogController.findAll();
 
+    var auditLogResponses = auditLogs.stream()
+      .map(auditLog -> new AuditLogResponse(
+        auditLog.getAuditLogId(),
+        auditLog.getOperation(),
+        auditLog.getStatus(),
+        auditLog.getDurationMs(),
+        auditLog.getRegisterDate(),
+        auditLog.getCreatedBy(),
+        auditLog.getError()
+      ))
+      .toList();
+
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(auditLogs, response.getBody());
+    assertEquals(auditLogResponses, response.getBody());
     verify(findAllAuditLogUseCase).findAll();
   }
 
@@ -81,7 +94,7 @@ class AuditLogControllerTest {
   @Test
   void returnsAuditLogsAsJsonForGetRequest() throws Exception {
     when(findAllAuditLogUseCase.findAll()).thenReturn(List.of(
-      new AuditLogResponse(1L, "GET PRODUCTS API", "SUCCESS", 42L,
+      new AuditLog(1L, "GET PRODUCTS API", "SUCCESS", 42L,
         LocalDateTime.of(2026, 9, 29, 22, 0), "API", null)
     ));
 
@@ -97,5 +110,6 @@ class AuditLogControllerTest {
 
     verify(findAllAuditLogUseCase).findAll();
   }
+
 
 }

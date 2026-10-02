@@ -1,6 +1,6 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.out.external;
 
-import com.example.ecommerce.catagol.domain.model.Product;
+import com.example.ecommerce.catagol.application.model.Product;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 

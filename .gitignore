@@ -55,8 +55,5 @@ coverage/
 ### Env ####
 .env
 
-### Generated ###
-out/
-
 ### Temporary ###
 tmp/

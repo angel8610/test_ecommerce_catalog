@@ -1,5 +1,7 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
+import com.example.ecommerce.catagol.application.model.ProductCatalogItem;
+import com.example.ecommerce.catagol.application.model.Rating;
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
@@ -49,17 +51,29 @@ class ProductControllerTest {
   @Test
   void returnsOkWithAllProductsFromUseCase() {
     var products = List.of(
-      new ProductResponse(1L, "Chair", new BigDecimal("49.99"), "Comfortable chair",
-        "Furniture", new RatingResponse(4.5, 12), "Durable material"),
-      new ProductResponse(2L, "Table", new BigDecimal("89.50"), "Wooden table",
-        "Furniture", new RatingResponse(4.2, 8), "")
+      new ProductCatalogItem(1L, "Chair", new BigDecimal("49.99"), "Comfortable chair",
+        "Furniture", new Rating(4.5, 12), "Durable material"),
+      new ProductCatalogItem(2L, "Table", new BigDecimal("89.50"), "Wooden table",
+        "Furniture", new Rating(4.2, 8), "")
     );
     when(productUseCase.getEnrichedCatalog()).thenReturn(products);
 
     ResponseEntity<List<ProductResponse>> response = productController.findAll();
 
+    var productResponse = products.stream()
+      .map(productCatalogItem -> new ProductResponse(
+        productCatalogItem.id(),
+        productCatalogItem.title(),
+        productCatalogItem.price(),
+        productCatalogItem.description(),
+        productCatalogItem.category(),
+        new RatingResponse(productCatalogItem.rating().rate(), productCatalogItem.rating().count()),
+        productCatalogItem.note()
+      ))
+      .toList();
+
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(products, response.getBody());
+    assertEquals(productResponse, response.getBody());
     verify(productUseCase).getEnrichedCatalog();
   }
 
@@ -88,8 +102,8 @@ class ProductControllerTest {
   @Test
   void returnsProductCatalogAsJsonWhenProductsEndpointIsCalled() throws Exception {
     when(productUseCase.getEnrichedCatalog()).thenReturn(List.of(
-      new ProductResponse(1L, "Chair", new BigDecimal("49.99"), "Comfortable chair",
-        "Furniture", new RatingResponse(4.5, 12), "Durable material")
+      new ProductCatalogItem(1L, "Chair", new BigDecimal("49.99"), "Comfortable chair",
+        "Furniture", new Rating(4.5, 12), "Durable material")
     ));
 
     mockMvc.perform(get("/api/v1/products"))

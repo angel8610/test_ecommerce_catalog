@@ -1,9 +1,11 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
 import com.example.ecommerce.catagol.application.port.in.FindAllProductNoteUseCase;
+import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
 import com.example.ecommerce.catagol.application.port.in.SaveProductNoteUseCase;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
+import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception.GlobalExceptionHandler;
@@ -18,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +38,10 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 
 @ExtendWith(MockitoExtension.class)
 class ProductNoteControllerTest {
+
+  private static final String NOTE = "Durable material";
+  private static final String CREATED_BY = "John Dave";
+  private static final Long EXT_PROD_ID = 42L;
 
   @Mock
   private SaveProductNoteUseCase saveProductNoteUseCase;
@@ -58,25 +65,31 @@ class ProductNoteControllerTest {
 
   @Test
   void returnsOkWithSavedProductNote() {
-    var request = new ProductNoteRequest(42L, "Durable material", "John Dave");
-    var savedProductNote = new ProductNoteResponse(7L, 42L, "Durable material", "John Dave");
-    when(saveProductNoteUseCase.saveProductNote(request)).thenReturn(savedProductNote);
+    var productNoteRequest = this.createProductNoteRequest(2L, "NOTE", "myUser");
+    var productNoteCreateCommand = this.getProductNoteCreateCommandFromRequest(productNoteRequest);
+    var productNote = this.createProductNote(1L, productNoteCreateCommand.extProdId(),
+      productNoteCreateCommand.note(), productNoteCreateCommand.createdBy());
+    var productNoteResponse = new ProductNoteResponse(productNote.getNoteId(), productNote.getExtProdId(),
+      productNote.getNote(), productNote.getCreatedBy());
 
-    ResponseEntity<ProductNoteResponse> response = productNoteController.saveProductNote(request);
+    when(saveProductNoteUseCase.saveProductNote(productNoteCreateCommand)).thenReturn(productNote);
 
-    assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(savedProductNote, response.getBody());
-    verify(saveProductNoteUseCase).saveProductNote(request);
+    ResponseEntity<ProductNoteResponse> response = productNoteController.saveProductNote(productNoteRequest);
+
+    assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    assertEquals(productNoteResponse, response.getBody());
+    verify(saveProductNoteUseCase).saveProductNote(productNoteCreateCommand);
   }
 
   @Test
   void propagatesDuplicateExceptionWhenSavingProductNote() {
-    var request = new ProductNoteRequest(42L, "Durable material", "John Dave");
+    var productNoteRequest = this.createProductNoteRequest(EXT_PROD_ID, NOTE, CREATED_BY);
+    var request = this.getProductNoteCreateCommandFromRequest(productNoteRequest);
     var duplicateException = new ProductNoteDuplicateException("The Product Note is duplicate");
     when(saveProductNoteUseCase.saveProductNote(request)).thenThrow(duplicateException);
 
     var exception = assertThrows(ProductNoteDuplicateException.class,
-      () -> productNoteController.saveProductNote(request));
+      () -> productNoteController.saveProductNote(productNoteRequest));
 
     assertSame(duplicateException, exception);
     verify(saveProductNoteUseCase).saveProductNote(request);
@@ -85,15 +98,21 @@ class ProductNoteControllerTest {
   @Test
   void returnsOkWithAllProductNotes() {
     var productNotes = List.of(
-      new ProductNoteResponse(7L, 42L, "Durable material", "John Dave"),
-      new ProductNoteResponse(8L, 43L, "Easy to clean", "Jordan Lee")
+      new ProductNote(7L, 42L, NOTE, CREATED_BY,
+        LocalDateTime.of(2024, 6, 1, 12, 0, 0)),
+      new ProductNote(8L, 43L, "Easy to clean", "Jordan Lee",
+        LocalDateTime.of(2024, 6, 2, 15, 30, 0))
     );
     when(findAllProductNoteUseCase.findAll()).thenReturn(productNotes);
 
     ResponseEntity<List<ProductNoteResponse>> response = productNoteController.findAll();
 
+    var productsNoteResponses = List.of(
+      new ProductNoteResponse(7L, 42L, NOTE, CREATED_BY),
+      new ProductNoteResponse(8L, 43L, "Easy to clean", "Jordan Lee")
+    );
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(productNotes, response.getBody());
+    assertEquals(productsNoteResponses, response.getBody());
     verify(findAllProductNoteUseCase).findAll();
   }
 
@@ -122,9 +141,12 @@ class ProductNoteControllerTest {
 
   @Test
   void returnsSavedProductNoteAsJsonWhenPostRequestIsValid() throws Exception {
-    var request = new ProductNoteRequest(42L, "Durable material", "John Dave");
-    when(saveProductNoteUseCase.saveProductNote(request))
-      .thenReturn(new ProductNoteResponse(7L, 42L, "Durable material", "John Dave"));
+    var productNoteRequest = this.createProductNoteRequest(EXT_PROD_ID, NOTE, CREATED_BY);
+    var productNoteCreateCommand = this.getProductNoteCreateCommandFromRequest(productNoteRequest);
+    var productNote = this.createProductNote(2L, EXT_PROD_ID, NOTE, CREATED_BY);
+
+    when(saveProductNoteUseCase.saveProductNote(productNoteCreateCommand))
+      .thenReturn(productNote);
 
     mockMvc.perform(post("/api/v1/prodnotes")
         .contentType(MediaType.APPLICATION_JSON)
@@ -135,14 +157,14 @@ class ProductNoteControllerTest {
             "createdBy": "John Dave"
           }
           """))
-      .andExpect(status().isOk())
+      .andExpect(status().isCreated())
       .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-      .andExpect(jsonPath("$.noteId").value(7))
+      .andExpect(jsonPath("$.noteId").value(2))
       .andExpect(jsonPath("$.extProdId").value(42))
-      .andExpect(jsonPath("$.note").value("Durable material"))
-      .andExpect(jsonPath("$.createdBy").value("John Dave"));
+      .andExpect(jsonPath("$.note").value(NOTE))
+      .andExpect(jsonPath("$.createdBy").value(CREATED_BY));
 
-    verify(saveProductNoteUseCase).saveProductNote(request);
+    verify(saveProductNoteUseCase).saveProductNote(productNoteCreateCommand);
   }
 
   @Test
@@ -169,32 +191,38 @@ class ProductNoteControllerTest {
 
   @Test
   void returnsConflictWhenPostRequestCreatesDuplicateNote() throws Exception {
-    when(saveProductNoteUseCase.saveProductNote(org.mockito.ArgumentMatchers.any(ProductNoteRequest.class)))
-      .thenThrow(new ProductNoteDuplicateException("The Product Note is duplicate"));
+    var productNoteRequest = this.createProductNoteRequest(3L, "Add notes", "user");
+    var productNoteRequestCommand = this.getProductNoteCreateCommandFromRequest(productNoteRequest);
+
+    when(saveProductNoteUseCase.saveProductNote(org.mockito.ArgumentMatchers.any(
+      ProductNoteCreateCommand.class))).thenThrow(
+        new ProductNoteDuplicateException("The Product Note is duplicate"));
 
     mockMvc.perform(post("/api/v1/prodnotes")
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
           {
-            "extProdId": 42,
-            "note": "Durable material",
-            "createdBy": "John Dave"
+            "extProdId": 3,
+            "note": "Add notes",
+            "createdBy": "user"
           }
           """))
       .andExpect(status().isConflict())
       .andExpect(content().string("The Product Note is duplicate"));
 
-    verify(saveProductNoteUseCase).saveProductNote(
-      new ProductNoteRequest(42L, "Durable material", "John Dave")
-    );
+    verify(saveProductNoteUseCase).saveProductNote(productNoteRequestCommand);
   }
 
   @Test
   void returnsAllProductNotesAsJsonWhenGetRequestIsCalled() throws Exception {
-    when(findAllProductNoteUseCase.findAll()).thenReturn(List.of(
-      new ProductNoteResponse(7L, 42L, "Durable material", "John Dave"),
-      new ProductNoteResponse(8L, 43L, "Easy to clean", "Jordan Lee")
-    ));
+    var productNotes = List.of(
+      new ProductNote(7L, 42L, NOTE, CREATED_BY,
+        LocalDateTime.of(2024, 6, 1, 12, 0, 0)),
+      new ProductNote(8L, 43L, "Easy to clean", "Jordan Lee",
+        LocalDateTime.of(2024, 6, 2, 15, 30, 0))
+    );
+
+    when(findAllProductNoteUseCase.findAll()).thenReturn(productNotes);
 
     mockMvc.perform(get("/api/v1/prodnotes"))
       .andExpect(status().isOk())
@@ -231,6 +259,23 @@ class ProductNoteControllerTest {
       .andExpect(content().string("There are no recorded notes for the products."));
 
     verify(findAllProductNoteUseCase).findAll();
+  }
+
+  private ProductNoteRequest createProductNoteRequest(Long expProdId, String note, String createdBy) {
+    return new ProductNoteRequest(expProdId, note, createdBy);
+  }
+
+  private ProductNoteCreateCommand getProductNoteCreateCommandFromRequest(ProductNoteRequest request) {
+    return new ProductNoteCreateCommand(request.extProdId(), request.note(), request.createdBy());
+  }
+
+  private ProductNote createProductNote(Long noteId, Long extProdId, String note, String createdBy) {
+    return ProductNote.builder()
+      .noteId(noteId)
+      .extProdId(extProdId)
+      .note(note)
+      .createdBy(createdBy)
+      .build();
   }
 
 

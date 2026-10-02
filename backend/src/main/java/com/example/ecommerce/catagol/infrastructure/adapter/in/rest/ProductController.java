@@ -2,6 +2,7 @@ package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
+import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.RatingResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,8 +24,21 @@ public class ProductController {
   @GetMapping()
   @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
   public ResponseEntity<List<ProductResponse>> findAll() {
-    var products = productUseCase.getEnrichedCatalog();
-    return ResponseEntity.ok(products);
+    var productResponses = productUseCase.getEnrichedCatalog().stream()
+      .map(productCatalogItem -> {
+        var rating = productCatalogItem.rating();
+        return new ProductResponse(
+          productCatalogItem.id(),
+          productCatalogItem.title(),
+          productCatalogItem.price(),
+          productCatalogItem.description(),
+          productCatalogItem.category(),
+          new RatingResponse(rating.rate(), rating.count()),
+          productCatalogItem.note()
+        );
+      })
+      .toList();
+    return ResponseEntity.ok(productResponses);
   }
 
 

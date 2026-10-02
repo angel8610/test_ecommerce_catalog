@@ -1,13 +1,12 @@
 package com.example.ecommerce.catagol.application.service;
 
+import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
 import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
 import com.example.ecommerce.catagol.domain.model.AuditLog;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteRequest;
-import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +19,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +28,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ProductNoteServiceTest {
+
+  private static final String NOTE = "Durable material";
+  private static final String CREATED_BY = "John Dave";
 
   @Mock
   private ProductNoteRepositoryPort productNoteRepositoryPort;
@@ -46,26 +47,26 @@ class ProductNoteServiceTest {
 
   @Test
   void savesProductNoteAndReturnsSavedNoteDetails() {
-    var request = new ProductNoteRequest(42L, "Durable material", "John Dave");
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material",
+      "John Dave");
     var savedProductNote = ProductNote.builder()
       .noteId(1L)
       .extProdId(42L)
-      .note("Durable material")
-      .createdBy("John Dave")
+      .note(NOTE)
+      .createdBy(CREATED_BY)
       .build();
     when(productNoteRepositoryPort.save(any(ProductNote.class)))
       .thenReturn(savedProductNote);
 
-    ProductNoteResponse response = productNoteService.saveProductNote(request);
+    ProductNote productNote = productNoteService.saveProductNote(productNoteCreateCommand);
 
-    assertEquals(new ProductNoteResponse(1L, 42L,
-      "Durable material", "John Dave"), response);
+    assertEquals(savedProductNote, productNote);
 
     var productNoteCaptor = ArgumentCaptor.forClass(ProductNote.class);
     verify(productNoteRepositoryPort).save(productNoteCaptor.capture());
     assertEquals(42L, productNoteCaptor.getValue().getExtProdId());
-    assertEquals("Durable material", productNoteCaptor.getValue().getNote());
-    assertEquals("John Dave", productNoteCaptor.getValue().getCreatedBy());
+    assertEquals(NOTE, productNoteCaptor.getValue().getNote());
+    assertEquals(CREATED_BY, productNoteCaptor.getValue().getCreatedBy());
 
     var auditLogCaptor = ArgumentCaptor.forClass(AuditLog.class);
     verify(auditLogRepositoryPort).save(auditLogCaptor.capture());
@@ -74,13 +75,12 @@ class ProductNoteServiceTest {
 
   @Test
   void throwsDuplicateExceptionWhenRepositoryRejectsDuplicateProductNote() {
-    var request = new ProductNoteRequest(42L, "Durable material", "John Dave");
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, NOTE, CREATED_BY);
     when(productNoteRepositoryPort.save(any(ProductNote.class)))
       .thenThrow(new DataIntegrityViolationException("Duplicate note"));
 
-    var exception = assertThrows(
-      ProductNoteDuplicateException.class,
-      () -> productNoteService.saveProductNote(request)
+    var exception = assertThrows(ProductNoteDuplicateException.class,
+      () -> productNoteService.saveProductNote(productNoteCreateCommand)
     );
 
     assertEquals("The Product Note is duplicate", exception.getMessage());
@@ -93,14 +93,13 @@ class ProductNoteServiceTest {
 
   @Test
   void propagatesUnexpectedRepositoryErrorsWhenSavingProductNote() {
-    var request = new ProductNoteRequest(42L, "Durable material", "John Dave");
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, NOTE, CREATED_BY);
     var repositoryException = new IllegalStateException("Repository unavailable");
     when(productNoteRepositoryPort.save(any(ProductNote.class)))
       .thenThrow(repositoryException);
 
-    var exception = assertThrows(
-      IllegalStateException.class,
-      () -> productNoteService.saveProductNote(request)
+    var exception = assertThrows(IllegalStateException.class,
+      () -> productNoteService.saveProductNote(productNoteCreateCommand)
     );
 
     assertSame(repositoryException, exception);
@@ -111,21 +110,14 @@ class ProductNoteServiceTest {
 
   @Test
   void returnsAllProductNotesAsResponsesInRepositoryOrder() {
-    var firstProductNote = createProductNote(1L, 42L,
-      "Durable material", "John Dave");
+    var firstProductNote = createProductNote(1L, 42L, NOTE, CREATED_BY);
     var secondProductNote = createProductNote(2L, 43L,
       "Easy to clean", "Jordan Lee");
     when(productNoteRepositoryPort.findAll()).thenReturn(List.of(firstProductNote, secondProductNote));
 
-    List<ProductNoteResponse> responses = productNoteService.findAll();
+    List<ProductNote> responses = productNoteService.findAll();
 
-    assertEquals(
-      List.of(
-        new ProductNoteResponse(1L, 42L, "Durable material", "John Dave"),
-        new ProductNoteResponse(2L, 43L, "Easy to clean", "Jordan Lee")
-      ),
-      responses
-    );
+    assertEquals(List.of(firstProductNote, secondProductNote), responses);
     verify(productNoteRepositoryPort).findAll();
   }
 
@@ -164,5 +156,6 @@ class ProductNoteServiceTest {
     assertNotNull(auditLog.getRegisterDate());
     assertTrue(auditLog.getDurationMs() >= 0);
   }
+
 
 }
