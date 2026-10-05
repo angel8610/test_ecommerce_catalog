@@ -45,6 +45,8 @@ class CustomUserDetailsServiceTest {
         new Role(2L, "ROLE_ADMIN", "Administrator", 7L),
         new Role(3L, "ROLE_USER", "Standard user", 7L)
       ))
+      .firstName("Jane")
+      .lastName("Doe")
       .build();
     when(userRepositoryPort.findByUsername("jane.doe")).thenReturn(Optional.of(user));
 
@@ -67,6 +69,8 @@ class CustomUserDetailsServiceTest {
       .username("jane.doe")
       .password("encoded-password")
       .roles(List.of())
+      .firstName("Jane")
+      .lastName("Doe")
       .build();
     when(userRepositoryPort.findByUsername("jane.doe")).thenReturn(Optional.of(user));
 
