@@ -1,8 +1,10 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
+import com.example.ecommerce.catagol.application.model.AuthenticatedUser;
 import com.example.ecommerce.catagol.application.model.Login;
 import com.example.ecommerce.catagol.application.port.in.AuthenticateUserUseCase;
 import com.example.ecommerce.catagol.application.port.in.LoginCommand;
+import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.AuthenticatedUserResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception.GlobalExceptionHandler;
@@ -18,6 +20,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -56,8 +60,14 @@ class AuthControllerTest {
   void returnsOkWithLoginResponseWhenAuthenticationSucceeds() {
     var loginRequest = new LoginRequest("jane.doe", "correct-password");
     var loginCommand = new LoginCommand(loginRequest.username(), loginRequest.password());
-    var login = new Login("signed-jwt", "Bearer", 900L);
-    var loginResponse = new LoginResponse(login.accessToken(), login.tokenType(), login.expiresIn());
+    var user = new AuthenticatedUser("username","username",
+      Set.of("ROLE_ADMIN"), "firstName", "lastName");
+    var login = new Login("signed-jwt", "Bearer", 900L, user);
+    var userResponse = new AuthenticatedUserResponse(user.userId(), user.username(),
+      user.roles(), user.firstName(), user.lastName());
+    var loginResponse = new LoginResponse(login.accessToken(), login.tokenType(), login.expiresIn(),
+      userResponse);
+
     when(authenticateUserUseCase.authenticate(loginCommand)).thenReturn(login);
 
     ResponseEntity<LoginResponse> response = authController.login(loginRequest);
@@ -85,8 +95,11 @@ class AuthControllerTest {
   void returnsTokenAsJsonWhenLoginEndpointReceivesValidRequest() throws Exception {
     var loginRequest = new LoginRequest("jane.doe", "correct-password");
     var loginCommand = new LoginCommand(loginRequest.username(), loginRequest.password());
+    var user = new AuthenticatedUser("username", "username",
+      Set.of("ROLE_ADMIN", "ROLE_USER"), "firstName", "lastName");
+
     when(authenticateUserUseCase.authenticate(loginCommand))
-      .thenReturn(new Login("signed-jwt", "Bearer", 900L));
+      .thenReturn(new Login("signed-jwt", "Bearer", 900L, user));
 
     mockMvc.perform(post("/api/auth/login")
         .contentType(MediaType.APPLICATION_JSON)
@@ -100,7 +113,13 @@ class AuthControllerTest {
       .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
       .andExpect(jsonPath("$.accessToken").value("signed-jwt"))
       .andExpect(jsonPath("$.tokenType").value("Bearer"))
-      .andExpect(jsonPath("$.expiresIn").value(900));
+      .andExpect(jsonPath("$.expiresIn").value(900))
+      .andExpect(jsonPath("$.user.userId").value("username"))
+      .andExpect(jsonPath("$.user.username").value("username"))
+      .andExpect(jsonPath("$.user.roles").isArray())
+      .andExpect(jsonPath("$.user.roles").isNotEmpty())
+      .andExpect(jsonPath("$.user.firstName").value("firstName"))
+      .andExpect(jsonPath("$.user.lastName").value("lastName"));
 
     verify(authenticateUserUseCase).authenticate(loginCommand);
   }

@@ -1,8 +1,8 @@
-package com.example.ecommerce.catagol.application.model;
+package com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto;
 
 import java.util.Set;
 
-public record AuthenticatedUser(
+public record AuthenticatedUserResponse(
 
   String userId,
   String username,
@@ -13,7 +13,7 @@ public record AuthenticatedUser(
 
 ) {
 
-  public AuthenticatedUser {
+  public AuthenticatedUserResponse {
     roles = Set.copyOf(roles);
   }
 

@@ -43,7 +43,8 @@ class JwtTokenAdapterTest {
 
   @Test
   void generatesTokenWithExpectedHeaderAndClaims() {
-    var user = new AuthenticatedUser("user-42", "jane.doe", Set.of("ROLE_ADMIN", "ROLE_USER"));
+    var user = new AuthenticatedUser("user-42", "jane.doe", Set.of("ROLE_ADMIN", "ROLE_USER"),
+      "firstName", "lastName");
     var jwt = mock(Jwt.class);
     when(jwt.getTokenValue()).thenReturn("signed-jwt");
     when(jwtEncoder.encode(any(JwtEncoderParameters.class))).thenReturn(jwt);
@@ -67,6 +68,8 @@ class JwtTokenAdapterTest {
     assertEquals("user-42", claims.getSubject());
     assertEquals("jane.doe", claims.getClaim("username"));
     assertEquals(Set.of("ROLE_ADMIN", "ROLE_USER"), claims.getClaim("roles"));
+    assertEquals("firstName", claims.getClaim("firstName"));
+    assertEquals("lastName", claims.getClaim("lastName"));
     assertEquals(900L, claims.getExpiresAt().getEpochSecond() - claims.getIssuedAt().getEpochSecond());
     assertTrue(claims.getIssuedAt().compareTo(startedAt) >= 0);
     assertTrue(claims.getIssuedAt().compareTo(finishedAt) <= 0);
@@ -74,7 +77,8 @@ class JwtTokenAdapterTest {
 
   @Test
   void generatesTokenWithEmptyRolesWhenUserHasNoRoles() {
-    var user = new AuthenticatedUser("user-42", "jane.doe", Set.of());
+    var user = new AuthenticatedUser("user-42", "jane.doe", Set.of(), "firstName",
+      "lastName");
     var jwt = mock(Jwt.class);
     when(jwt.getTokenValue()).thenReturn("signed-jwt");
     when(jwtEncoder.encode(any(JwtEncoderParameters.class))).thenReturn(jwt);
@@ -89,7 +93,8 @@ class JwtTokenAdapterTest {
 
   @Test
   void propagatesJwtEncoderErrorsWhenGeneratingToken() {
-    var user = new AuthenticatedUser("user-42", "jane.doe", Set.of("ROLE_USER"));
+    var user = new AuthenticatedUser("user-42", "jane.doe", Set.of("ROLE_USER"),
+      "firstName", "lastName");
     var encoderException = new IllegalStateException("JWT signing failed");
     when(jwtEncoder.encode(any(JwtEncoderParameters.class))).thenThrow(encoderException);
 

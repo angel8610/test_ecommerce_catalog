@@ -33,6 +33,8 @@ public class JwtTokenAdapter implements TokenProviderPort {
       .expiresAt(now.plusSeconds(securityJwtConfig.getExpiration()))
       .claim("username", user.username())
       .claim("roles", user.roles())
+      .claim("firstName", user.firstName())
+      .claim("lastName", user.lastName())
       .build();
 
     JwsHeader header = JwsHeader

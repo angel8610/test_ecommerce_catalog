@@ -21,5 +21,9 @@ public class User {
 
   private List<Role> roles;
 
+  private String firstName;
+
+  private String lastName;
+
 
 }

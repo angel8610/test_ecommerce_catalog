@@ -2,6 +2,7 @@ package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
 import com.example.ecommerce.catagol.application.port.in.AuthenticateUserUseCase;
 import com.example.ecommerce.catagol.application.port.in.LoginCommand;
+import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.AuthenticatedUserResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginResponse;
 import jakarta.validation.Valid;
@@ -24,10 +25,19 @@ public class AuthController {
     var loginCommand = new LoginCommand(loginRequest.username(), loginRequest.password());
     var login = authenticateUserUseCase.authenticate(loginCommand);
 
+    var user = login.user();
+    var userResponse = new AuthenticatedUserResponse(
+      user.userId(),
+      user.username(),
+      user.roles(),
+      user.firstName(),
+      user.lastName()
+    );
     var loginResponse = new LoginResponse(
       login.accessToken(),
       login.tokenType(),
-      login.expiresIn()
+      login.expiresIn(),
+      userResponse
     );
     return ResponseEntity.ok(loginResponse);
   }

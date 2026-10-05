@@ -4,6 +4,7 @@ import com.example.ecommerce.catagol.application.model.AuthenticatedUser;
 import com.example.ecommerce.catagol.application.model.Login;
 import com.example.ecommerce.catagol.application.port.in.LoginCommand;
 import com.example.ecommerce.catagol.application.port.out.TokenProviderPort;
+import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetails;
 import com.example.ecommerce.catagol.infrastructure.config.SecurityJwtConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static java.util.Arrays.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -54,7 +57,11 @@ class AuthenticationServiceTest {
   @Test
   void authenticatesUserAndReturnsBearerTokenWithConfiguredExpiration() {
     var request = new LoginCommand("loginUser", "correctPassword");
-    var authentication = authenticatedUser("verifiedUser", "ROLE_ADMIN", "ROLE_USER");
+    var customUserDetails = buildCustomUserDetails(request.username(), request.password(),
+      "ROLE_ADMIN");
+    var user = new AuthenticatedUser(customUserDetails.getUsername(), customUserDetails.getUsername(),
+      Set.of("ROLE_ADMIN"), customUserDetails.getFirstName(), customUserDetails.getLastName());
+    var authentication = buildAuthenticatedUser(customUserDetails, "ROLE_ADMIN");
 
     when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);
     when(tokenProvider.generateToken(any(AuthenticatedUser.class))).thenReturn("signed-token");
@@ -62,7 +69,7 @@ class AuthenticationServiceTest {
 
     Login response = authenticationService.authenticate(request);
 
-    assertEquals(new Login("signed-token", "Bearer", 3600L), response);
+    assertEquals(new Login("signed-token", "Bearer", 3600L, user), response);
 
     var authenticationCaptor = ArgumentCaptor.forClass(Authentication.class);
     verify(authenticationManager).authenticate(authenticationCaptor.capture());
@@ -73,22 +80,28 @@ class AuthenticationServiceTest {
 
     var userCaptor = ArgumentCaptor.forClass(AuthenticatedUser.class);
     verify(tokenProvider).generateToken(userCaptor.capture());
-    assertEquals("verifiedUser", userCaptor.getValue().userId());
-    assertEquals("verifiedUser", userCaptor.getValue().username());
-    assertEquals(Set.of("ROLE_ADMIN", "ROLE_USER"), userCaptor.getValue().roles());
+    assertEquals("loginUser", userCaptor.getValue().userId());
+    assertEquals("loginUser", userCaptor.getValue().username());
+    assertEquals(Set.of("ROLE_ADMIN"), userCaptor.getValue().roles());
+    assertEquals("firstName", userCaptor.getValue().firstName());
+    assertEquals("lastName", userCaptor.getValue().lastName());
   }
 
   @Test
   void createsAuthenticatedUserWithNoRolesWhenAuthenticationHasNoAuthorities() {
-    var request = new LoginCommand("loginUser", "correctPassword");
-    var authentication = authenticatedUser("verifiedUser");
+    var request = new LoginCommand("username", "username");
+    var customUserDetails = buildCustomUserDetails(request.username(), request.password());
+    var authentication = buildAuthenticatedUser(customUserDetails);
+    var user = new AuthenticatedUser(customUserDetails.getUsername(), customUserDetails.getPassword(),
+      Set.of(), "firstName", "lastName");
+
     when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);
     when(tokenProvider.generateToken(any(AuthenticatedUser.class))).thenReturn("signed-token");
     when(securityJwtConfig.getExpiration()).thenReturn(1200L);
 
     Login response = authenticationService.authenticate(request);
 
-    assertEquals(new Login("signed-token", "Bearer", 1200L), response);
+    assertEquals(new Login("signed-token", "Bearer", 1200L, user), response);
     var userCaptor = ArgumentCaptor.forClass(AuthenticatedUser.class);
     verify(tokenProvider).generateToken(userCaptor.capture());
     assertEquals(Set.of(), userCaptor.getValue().roles());
@@ -98,6 +111,7 @@ class AuthenticationServiceTest {
   void propagatesAuthenticationFailuresWithoutGeneratingToken() {
     var request = new LoginCommand("loginUser", "incorrectPassword");
     var authenticationException = new BadCredentialsException("Invalid credentials");
+
     when(authenticationManager.authenticate(any(Authentication.class)))
       .thenThrow(authenticationException);
 
@@ -111,8 +125,10 @@ class AuthenticationServiceTest {
   @Test
   void propagatesTokenGenerationFailuresAfterSuccessfulAuthentication() {
     var request = new LoginCommand("loginUser", "correctPassword");
-    var authentication = authenticatedUser("verifiedUser", "ROLE_USER");
+    var customUserDetails = buildCustomUserDetails(request.username(), request.password(), "ROLE_USER");
+    var authentication = buildAuthenticatedUser(customUserDetails, "ROLE_USER");
     var tokenException = new IllegalStateException("Token signing failed");
+
     when(authenticationManager.authenticate(any(Authentication.class))).thenReturn(authentication);
     when(tokenProvider.generateToken(any(AuthenticatedUser.class))).thenThrow(tokenException);
 
@@ -124,11 +140,19 @@ class AuthenticationServiceTest {
     verify(securityJwtConfig, never()).getExpiration();
   }
 
-  private Authentication authenticatedUser(String username, String... roles) {
+  private CustomUserDetails buildCustomUserDetails(String username, String password, String... roles) {
+    var authorities = stream(roles)
+      .map(SimpleGrantedAuthority::new)
+      .collect(Collectors.toSet());
+    return new CustomUserDetails(username, password, authorities,
+      "firstName","lastName");
+  }
+
+  private Authentication buildAuthenticatedUser(Object customUserDetails, String... roles) {
     return UsernamePasswordAuthenticationToken.authenticated(
-      username,
+      customUserDetails,
       null,
-      java.util.Arrays.stream(roles)
+      stream(roles)
         .map(SimpleGrantedAuthority::new)
         .toList()
     );

@@ -18,10 +18,17 @@ public class UserJpaEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long userId;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 50)
   private String username;
 
+  @Column(nullable = false, length = 500)
   private String password;
+
+  @Column(nullable = false, length = 100)
+  private String firstName;
+
+  @Column(nullable = false, length = 50)
+  private String lastName;
 
   @OneToMany(fetch = FetchType.EAGER)
   @JoinColumn(name = "user_id")

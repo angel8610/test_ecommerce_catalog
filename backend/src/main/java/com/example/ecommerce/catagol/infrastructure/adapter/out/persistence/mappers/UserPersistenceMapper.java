@@ -23,6 +23,8 @@ public class UserPersistenceMapper {
       .username(userJpaEntity.getUsername())
       .password(userJpaEntity.getPassword())
       .roles(roles)
+      .firstName(userJpaEntity.getFirstName())
+      .lastName(userJpaEntity.getLastName())
       .build();
   }
 

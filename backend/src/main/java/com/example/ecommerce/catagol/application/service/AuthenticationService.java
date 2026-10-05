@@ -5,6 +5,7 @@ import com.example.ecommerce.catagol.application.model.Login;
 import com.example.ecommerce.catagol.application.port.in.AuthenticateUserUseCase;
 import com.example.ecommerce.catagol.application.port.in.LoginCommand;
 import com.example.ecommerce.catagol.application.port.out.TokenProviderPort;
+import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetails;
 import com.example.ecommerce.catagol.infrastructure.config.SecurityJwtConfig;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,6 +32,8 @@ public class AuthenticationService implements AuthenticateUserUseCase {
   public Login authenticate(LoginCommand loginCommand) {
     Authentication authentication = authenticationManager.authenticate(
       new UsernamePasswordAuthenticationToken(loginCommand.username(), loginCommand.password()));
+    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
     Set<String> roles = authentication.getAuthorities()
       .stream()
       .map(GrantedAuthority::getAuthority)
@@ -39,11 +42,14 @@ public class AuthenticationService implements AuthenticateUserUseCase {
     AuthenticatedUser user = new AuthenticatedUser(
       authentication.getName(),
       authentication.getName(),
-      roles
+      roles,
+      userDetails.getFirstName(),
+      userDetails.getLastName()
     );
 
     var token = tokenProvider.generateToken(user);
-    return new Login(token, "Bearer", securityJwtConfig.getExpiration());
+
+    return new Login(token, "Bearer", securityJwtConfig.getExpiration(), user);
   }
 
 
