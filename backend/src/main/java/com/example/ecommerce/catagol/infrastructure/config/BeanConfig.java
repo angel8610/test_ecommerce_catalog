@@ -33,8 +33,9 @@ public class BeanConfig {
   }
 
   @Bean
-  public ProductNoteService productNoteService(ProductNoteRepositoryPort productNoteRepositoryPort) {
-    return new ProductNoteService(productNoteRepositoryPort);
+  public ProductNoteService productNoteService(ProductNoteRepositoryPort productNoteRepositoryPort,
+                                               AuthenticationPort authenticationPort) {
+    return new ProductNoteService(productNoteRepositoryPort, authenticationPort);
   }
 
   @Bean

@@ -1,8 +1,10 @@
 package com.example.ecommerce.catagol.application.service;
 
 import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
+import com.example.ecommerce.catagol.application.port.out.AuthenticationPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
+import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,13 +16,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductNoteServiceTest {
@@ -31,23 +33,27 @@ class ProductNoteServiceTest {
   @Mock
   private ProductNoteRepositoryPort productNoteRepositoryPort;
 
+  @Mock
+  private AuthenticationPort authenticationPort;
+
   private ProductNoteService productNoteService;
 
   @BeforeEach
   void setUp() {
-    productNoteService = new ProductNoteService(productNoteRepositoryPort);
+    productNoteService = new ProductNoteService(productNoteRepositoryPort, authenticationPort);
   }
 
   @Test
   void savesProductNoteAndReturnsSavedNoteDetails() {
-    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material",
-      "John Dave");
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material");
     var savedProductNote = ProductNote.builder()
       .noteId(1L)
       .extProdId(42L)
       .note(NOTE)
       .createdBy(CREATED_BY)
       .build();
+
+    when(authenticationPort.getAuthenticatedUsername()).thenReturn(Optional.of(CREATED_BY));
     when(productNoteRepositoryPort.save(any(ProductNote.class)))
       .thenReturn(savedProductNote);
 
@@ -63,8 +69,23 @@ class ProductNoteServiceTest {
   }
 
   @Test
+  void throwsGenericErrorExceptionWhenNotUsername() {
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, NOTE);
+
+    when(authenticationPort.getAuthenticatedUsername()).thenReturn(Optional.empty());
+
+    var exception = assertThrows(GenericErrorException.class,
+      () -> productNoteService.saveProductNote(productNoteCreateCommand));
+
+    assertEquals("Not authenticated user", exception.getMessage());
+    verify(productNoteRepositoryPort, never()).save(any(ProductNote.class));
+  }
+
+  @Test
   void throwsDuplicateExceptionWhenRepositoryRejectsDuplicateProductNote() {
-    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, NOTE, CREATED_BY);
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, NOTE);
+
+    when(authenticationPort.getAuthenticatedUsername()).thenReturn(Optional.of(CREATED_BY));
     when(productNoteRepositoryPort.save(any(ProductNote.class)))
       .thenThrow(new DataIntegrityViolationException("Duplicate note"));
 
@@ -78,8 +99,10 @@ class ProductNoteServiceTest {
 
   @Test
   void propagatesUnexpectedRepositoryErrorsWhenSavingProductNote() {
-    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, NOTE, CREATED_BY);
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, NOTE);
     var repositoryException = new IllegalStateException("Repository unavailable");
+
+    when(authenticationPort.getAuthenticatedUsername()).thenReturn(Optional.of(CREATED_BY));
     when(productNoteRepositoryPort.save(any(ProductNote.class)))
       .thenThrow(repositoryException);
 

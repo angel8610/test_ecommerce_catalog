@@ -11,6 +11,7 @@ import com.example.ecommerce.catagol.application.service.AuthenticationService;
 import com.example.ecommerce.catagol.application.service.AuditLogService;
 import com.example.ecommerce.catagol.application.service.ProductNoteService;
 import com.example.ecommerce.catagol.application.service.ProductService;
+import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
 import com.example.ecommerce.catagol.domain.model.AuditLog;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.domain.model.User;
@@ -65,6 +66,9 @@ class BeanConfigTest {
 
   @Mock
   private TokenProviderPort tokenProvider;
+
+  @Mock
+  private AuthenticationPort authenticationPort;
 
   private BeanConfig beanConfig;
 
@@ -201,8 +205,9 @@ class BeanConfigTest {
 
   @Test
   void createsProductNoteServiceConnectedToProductNoteRepository() {
-    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material",
-      "John Dave");
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material");
+
+    when(authenticationPort.getAuthenticatedUsername()).thenReturn(Optional.of("my_user"));
     when(productNoteRepositoryPort.save(any(ProductNote.class)))
       .thenAnswer(invocation -> {
         ProductNote productNote = invocation.getArgument(0);
@@ -210,7 +215,8 @@ class BeanConfigTest {
         return productNote;
       });
 
-    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort);
+    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
+      authenticationPort);
     ProductNote savedProductNote = productNoteService.saveProductNote(productNoteCreateCommand);
 
     var productNote = ProductNote.builder()
@@ -225,16 +231,30 @@ class BeanConfigTest {
   }
 
   @Test
+  void productNoteServiceNotCallSaveWhenNotUsername() {
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material");
+
+    when(authenticationPort.getAuthenticatedUsername()).thenReturn(Optional.empty());
+    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
+      authenticationPort);
+
+    assertThrows(GenericErrorException.class,
+      () -> productNoteService.saveProductNote(productNoteCreateCommand));
+    verify(productNoteRepositoryPort, never()).save(any(ProductNote.class));
+  }
+
+  @Test
   void productNoteServicePropagatesDuplicateNoteFailures() {
-    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material",
-      "John Dave");
+    var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material");
     var duplicateException = new ProductNoteDuplicateException("The Product Note is duplicate");
+
+    when(authenticationPort.getAuthenticatedUsername()).thenReturn(Optional.of("my_user"));
     when(productNoteRepositoryPort.save(any(ProductNote.class))).thenThrow(duplicateException);
-    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort);
+    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
+      authenticationPort);
 
     var exception = assertThrows(ProductNoteDuplicateException.class,
-      () -> productNoteService.saveProductNote(productNoteCreateCommand)
-    );
+      () -> productNoteService.saveProductNote(productNoteCreateCommand));
 
     assertSame(duplicateException, exception);
     verify(productNoteRepositoryPort).save(any(ProductNote.class));

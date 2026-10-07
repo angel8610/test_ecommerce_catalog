@@ -65,10 +65,10 @@ class ProductNoteControllerTest {
 
   @Test
   void returnsOkWithSavedProductNote() {
-    var productNoteRequest = this.createProductNoteRequest(2L, "NOTE", "myUser");
+    var productNoteRequest = this.createProductNoteRequest(2L, "NOTE");
     var productNoteCreateCommand = this.getProductNoteCreateCommandFromRequest(productNoteRequest);
     var productNote = this.createProductNote(1L, productNoteCreateCommand.extProdId(),
-      productNoteCreateCommand.note(), productNoteCreateCommand.createdBy());
+      productNoteCreateCommand.note());
     var productNoteResponse = new ProductNoteResponse(productNote.getNoteId(), productNote.getExtProdId(),
       productNote.getNote(), productNote.getCreatedBy());
 
@@ -83,7 +83,7 @@ class ProductNoteControllerTest {
 
   @Test
   void propagatesDuplicateExceptionWhenSavingProductNote() {
-    var productNoteRequest = this.createProductNoteRequest(EXT_PROD_ID, NOTE, CREATED_BY);
+    var productNoteRequest = this.createProductNoteRequest(EXT_PROD_ID, NOTE);
     var request = this.getProductNoteCreateCommandFromRequest(productNoteRequest);
     var duplicateException = new ProductNoteDuplicateException("The Product Note is duplicate");
     when(saveProductNoteUseCase.saveProductNote(request)).thenThrow(duplicateException);
@@ -141,9 +141,9 @@ class ProductNoteControllerTest {
 
   @Test
   void returnsSavedProductNoteAsJsonWhenPostRequestIsValid() throws Exception {
-    var productNoteRequest = this.createProductNoteRequest(EXT_PROD_ID, NOTE, CREATED_BY);
+    var productNoteRequest = this.createProductNoteRequest(EXT_PROD_ID, NOTE);
     var productNoteCreateCommand = this.getProductNoteCreateCommandFromRequest(productNoteRequest);
-    var productNote = this.createProductNote(2L, EXT_PROD_ID, NOTE, CREATED_BY);
+    var productNote = this.createProductNote(2L, EXT_PROD_ID, NOTE);
 
     when(saveProductNoteUseCase.saveProductNote(productNoteCreateCommand))
       .thenReturn(productNote);
@@ -174,24 +174,22 @@ class ProductNoteControllerTest {
         .content("""
           {
             "extProdId": null,
-            "note": "",
-            "createdBy": "John123"
+            "note": ""
           }
           """))
       .andExpect(status().isBadRequest())
       .andExpect(jsonPath("$.status").value(400))
       .andExpect(jsonPath("$.message").value("Validation failed"))
-      .andExpect(jsonPath("$.errors.length()").value(4))
+      .andExpect(jsonPath("$.errors.length()").value(3))
       .andExpect(jsonPath("$.errors[?(@.field == 'extProdId')]").isNotEmpty())
-      .andExpect(jsonPath("$.errors[?(@.field == 'note')]").isNotEmpty())
-      .andExpect(jsonPath("$.errors[?(@.field == 'createdBy')]").isNotEmpty());
+      .andExpect(jsonPath("$.errors[?(@.field == 'note')]").isNotEmpty());
 
     verifyNoInteractions(saveProductNoteUseCase);
   }
 
   @Test
   void returnsConflictWhenPostRequestCreatesDuplicateNote() throws Exception {
-    var productNoteRequest = this.createProductNoteRequest(3L, "Add notes", "user");
+    var productNoteRequest = this.createProductNoteRequest(3L, "Add notes");
     var productNoteRequestCommand = this.getProductNoteCreateCommandFromRequest(productNoteRequest);
 
     when(saveProductNoteUseCase.saveProductNote(org.mockito.ArgumentMatchers.any(
@@ -261,20 +259,20 @@ class ProductNoteControllerTest {
     verify(findAllProductNoteUseCase).findAll();
   }
 
-  private ProductNoteRequest createProductNoteRequest(Long expProdId, String note, String createdBy) {
-    return new ProductNoteRequest(expProdId, note, createdBy);
+  private ProductNoteRequest createProductNoteRequest(Long expProdId, String note) {
+    return new ProductNoteRequest(expProdId, note);
   }
 
   private ProductNoteCreateCommand getProductNoteCreateCommandFromRequest(ProductNoteRequest request) {
-    return new ProductNoteCreateCommand(request.extProdId(), request.note(), request.createdBy());
+    return new ProductNoteCreateCommand(request.extProdId(), request.note());
   }
 
-  private ProductNote createProductNote(Long noteId, Long extProdId, String note, String createdBy) {
+  private ProductNote createProductNote(Long noteId, Long extProdId, String note) {
     return ProductNote.builder()
       .noteId(noteId)
       .extProdId(extProdId)
       .note(note)
-      .createdBy(createdBy)
+      .createdBy(ProductNoteControllerTest.CREATED_BY)
       .build();
   }
 

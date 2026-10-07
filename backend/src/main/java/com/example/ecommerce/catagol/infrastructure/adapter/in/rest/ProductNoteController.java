@@ -32,8 +32,7 @@ public class ProductNoteController {
       @Valid @RequestBody ProductNoteRequest productNoteRequest) {
     var productNoteCreateCommand = new ProductNoteCreateCommand(
       productNoteRequest.extProdId(),
-      productNoteRequest.note(),
-      productNoteRequest.createdBy()
+      productNoteRequest.note()
     );
     var productNote = this.saveProductNoteUseCase.saveProductNote(productNoteCreateCommand);
 

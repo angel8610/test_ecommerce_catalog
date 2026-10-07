@@ -3,8 +3,10 @@ package com.example.ecommerce.catagol.application.service;
 import com.example.ecommerce.catagol.application.port.in.FindAllProductNoteUseCase;
 import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
 import com.example.ecommerce.catagol.application.port.in.SaveProductNoteUseCase;
+import com.example.ecommerce.catagol.application.port.out.AuthenticationPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
+import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.infrastructure.config.audit.Auditable;
@@ -16,18 +18,26 @@ import java.util.List;
 public class ProductNoteService implements SaveProductNoteUseCase, FindAllProductNoteUseCase {
 
   private final ProductNoteRepositoryPort productNoteRepositoryPort;
+  private final AuthenticationPort authenticationPort;
 
-  public ProductNoteService(ProductNoteRepositoryPort productNoteRepositoryPort) {
+  public ProductNoteService(ProductNoteRepositoryPort productNoteRepositoryPort,
+                            AuthenticationPort authenticationPort) {
     this.productNoteRepositoryPort = productNoteRepositoryPort;
+    this.authenticationPort = authenticationPort;
   }
 
   @Override
   @Auditable(operation = "SAVE PRODUCT NOTE")
   public ProductNote saveProductNote(ProductNoteCreateCommand productNoteCreateCommand)
-      throws ProductNoteDuplicateException{
+      throws GenericErrorException, ProductNoteDuplicateException {
+    var createdBy = this.authenticationPort.getAuthenticatedUsername().orElse(null);
+    if(createdBy == null) {
+      throw new GenericErrorException("Not authenticated user");
+    }
+
     var productNote = ProductNote.builder()
       .extProdId(productNoteCreateCommand.extProdId())
-      .createdBy(productNoteCreateCommand.createdBy())
+      .createdBy(createdBy)
       .note(productNoteCreateCommand.note())
       .build();
 
