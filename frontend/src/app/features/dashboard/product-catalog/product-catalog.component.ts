@@ -12,8 +12,6 @@ import { ProductTableComponent } from './product-catalog-table/product-table.com
 
 type CatalogLoadState = 'loading' | 'loaded' | 'error';
 
-const CREATED_BY = 'admin';// For a limited time
-
 @Component({
   selector: 'app-product-catalog',
   standalone: true,
@@ -71,8 +69,7 @@ export class ProductCatalogComponent implements OnInit {
 
     const request: ProductNoteRequest = {
       extProdId: product.id,
-      note,
-      createdBy: CREATED_BY
+      note
     };
 
     this.productNoteService.save(request)
