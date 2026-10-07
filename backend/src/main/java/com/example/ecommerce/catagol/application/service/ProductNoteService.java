@@ -3,30 +3,26 @@ package com.example.ecommerce.catagol.application.service;
 import com.example.ecommerce.catagol.application.port.in.FindAllProductNoteUseCase;
 import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
 import com.example.ecommerce.catagol.application.port.in.SaveProductNoteUseCase;
-import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
-import com.example.ecommerce.catagol.domain.model.AuditLog;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
+import com.example.ecommerce.catagol.infrastructure.config.audit.Auditable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public class ProductNoteService implements SaveProductNoteUseCase, FindAllProductNoteUseCase {
 
   private final ProductNoteRepositoryPort productNoteRepositoryPort;
-  private final AuditLogRepositoryPort auditLogRepositoryPort;
 
-  public ProductNoteService(ProductNoteRepositoryPort productNoteRepositoryPort,
-                            AuditLogRepositoryPort auditLogRepositoryPort) {
+  public ProductNoteService(ProductNoteRepositoryPort productNoteRepositoryPort) {
     this.productNoteRepositoryPort = productNoteRepositoryPort;
-    this.auditLogRepositoryPort = auditLogRepositoryPort;
   }
 
   @Override
+  @Auditable(operation = "SAVE PRODUCT NOTE")
   public ProductNote saveProductNote(ProductNoteCreateCommand productNoteCreateCommand)
       throws ProductNoteDuplicateException{
     var productNote = ProductNote.builder()
@@ -34,8 +30,6 @@ public class ProductNoteService implements SaveProductNoteUseCase, FindAllProduc
       .createdBy(productNoteCreateCommand.createdBy())
       .note(productNoteCreateCommand.note())
       .build();
-    long startTime = System.currentTimeMillis();
-    String status = "SUCCESS";
 
     /*
       Regarding timing, only duplicate notes are being considered;
@@ -44,12 +38,7 @@ public class ProductNoteService implements SaveProductNoteUseCase, FindAllProduc
     try {
       return this.productNoteRepositoryPort.save(productNote);
     } catch (DataIntegrityViolationException ex) {
-      status = "FAILED";
       throw new ProductNoteDuplicateException("The Product Note is duplicate");
-    } finally {
-      long duration = System.currentTimeMillis() - startTime;
-      var auditLog = this.getAuditLog(duration, status);
-      this.auditLogRepositoryPort.save(auditLog);
     }
   }
 
@@ -62,18 +51,6 @@ public class ProductNoteService implements SaveProductNoteUseCase, FindAllProduc
     }
     return productNotes;
   }
-
-  private AuditLog getAuditLog(Long duration, String status) {
-    return AuditLog.builder()
-      .operation("SAVE PRODUCT NOTE")
-      .durationMs(duration)
-      .error(status.equals("FAILED") ? "Error fetching products" : null)
-      .registerDate(LocalDateTime.now())
-      .status(status)
-      .createdBy("REGISTER")
-      .build();
-  }
-
 
 
 }

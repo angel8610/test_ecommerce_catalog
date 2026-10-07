@@ -3,16 +3,14 @@ package com.example.ecommerce.catagol.application.service;
 import com.example.ecommerce.catagol.application.model.Product;
 import com.example.ecommerce.catagol.application.model.ProductCatalogItem;
 import com.example.ecommerce.catagol.application.model.Rating;
-import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
 import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
-import com.example.ecommerce.catagol.domain.model.AuditLog;
+import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -20,7 +18,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,17 +31,13 @@ class ProductServiceTest {
   @Mock
   private ProductNoteRepositoryPort productNoteRepositoryPort;
 
-  @Mock
-  private AuditLogRepositoryPort auditLogRepositoryPort;
-
   private ProductService productService;
 
   @BeforeEach
   void setUp() {
     productService = new ProductService(
       externalCatalogPort,
-      productNoteRepositoryPort,
-      auditLogRepositoryPort
+      productNoteRepositoryPort
     );
   }
 
@@ -70,16 +63,6 @@ class ProductServiceTest {
       ),
       responses
     );
-
-    var auditLogCaptor = ArgumentCaptor.forClass(AuditLog.class);
-    verify(auditLogRepositoryPort).save(auditLogCaptor.capture());
-    var auditLog = auditLogCaptor.getValue();
-    assertEquals("GET PRODUCTS API", auditLog.getOperation());
-    assertEquals("SUCCESS", auditLog.getStatus());
-    assertEquals("API", auditLog.getCreatedBy());
-    assertNull(auditLog.getError());
-    assertNotNull(auditLog.getRegisterDate());
-    assertTrue(auditLog.getDurationMs() >= 0);
   }
 
   @Test
@@ -90,7 +73,6 @@ class ProductServiceTest {
 
     assertEquals("No results were obtained from the API.", exception.getMessage());
     verify(productNoteRepositoryPort, never()).findAll();
-    verify(auditLogRepositoryPort, never()).save(any(AuditLog.class));
   }
 
   @Test
@@ -100,11 +82,10 @@ class ProductServiceTest {
     assertThrows(EmptyProductAPIException.class, productService::getEnrichedCatalog);
 
     verify(productNoteRepositoryPort, never()).findAll();
-    verify(auditLogRepositoryPort, never()).save(any(AuditLog.class));
   }
 
   @Test
-  void propagatesCatalogErrorsWithoutWritingAuditLog() {
+  void propagatesCatalogErrors() {
     var catalogException = new IllegalStateException("Catalog unavailable");
     when(externalCatalogPort.fetchAllProducts()).thenThrow(catalogException);
 
@@ -112,42 +93,38 @@ class ProductServiceTest {
 
     assertSame(catalogException, exception);
     verify(productNoteRepositoryPort, never()).findAll();
-    verify(auditLogRepositoryPort, never()).save(any(AuditLog.class));
   }
 
   @Test
-  void propagatesNoteRepositoryErrorsAndWritesFailedAuditLog() {
-    var repositoryException = new IllegalStateException("Notes unavailable");
+  void wrapsProductNoteRepositoryErrorsInGenericErrorException() {
     when(externalCatalogPort.fetchAllProducts())
       .thenReturn(List.of(createProduct(1L, "Chair", "49.99")));
-    when(productNoteRepositoryPort.findAll()).thenThrow(repositoryException);
+    when(productNoteRepositoryPort.findAll())
+      .thenThrow(new IllegalStateException("Notes repository unavailable"));
 
-    var exception = assertThrows(IllegalStateException.class, productService::getEnrichedCatalog);
+    var exception = assertThrows(GenericErrorException.class, productService::getEnrichedCatalog);
 
-    assertSame(repositoryException, exception);
-    var auditLogCaptor = ArgumentCaptor.forClass(AuditLog.class);
-    verify(auditLogRepositoryPort).save(auditLogCaptor.capture());
-    var auditLog = auditLogCaptor.getValue();
-    assertEquals("GET PRODUCTS API", auditLog.getOperation());
-    assertEquals("FAILED", auditLog.getStatus());
-    assertEquals("API", auditLog.getCreatedBy());
-    assertEquals("Error fetching products", auditLog.getError());
-    assertNotNull(auditLog.getRegisterDate());
-    assertTrue(auditLog.getDurationMs() >= 0);
+    assertEquals("An error occurred while processing the product catalog.", exception.getMessage());
+    verify(productNoteRepositoryPort).findAll();
   }
 
   @Test
-  void propagatesAuditRepositoryErrorsAfterSuccessfulCatalogEnrichment() {
-    var auditException = new IllegalStateException("Audit storage unavailable");
-    when(externalCatalogPort.fetchAllProducts())
-      .thenReturn(List.of(createProduct(1L, "Chair", "49.99")));
+  void wrapsProductConversionErrorsInGenericErrorException() {
+    var productWithoutRating = new Product(
+      1L,
+      "Chair",
+      new BigDecimal("49.99"),
+      "Description 1",
+      "Furniture",
+      null
+    );
+    when(externalCatalogPort.fetchAllProducts()).thenReturn(List.of(productWithoutRating));
     when(productNoteRepositoryPort.findAll()).thenReturn(List.of());
-    when(auditLogRepositoryPort.save(any(AuditLog.class))).thenThrow(auditException);
 
-    var exception = assertThrows(IllegalStateException.class, productService::getEnrichedCatalog);
+    var exception = assertThrows(GenericErrorException.class, productService::getEnrichedCatalog);
 
-    assertSame(auditException, exception);
-    verify(auditLogRepositoryPort).save(any(AuditLog.class));
+    assertEquals("An error occurred while processing the product catalog.", exception.getMessage());
+    verify(productNoteRepositoryPort).findAll();
   }
 
   private Product createProduct(Long id, String title, String price) {

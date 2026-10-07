@@ -1,15 +1,12 @@
 package com.example.ecommerce.catagol.infrastructure.config;
 
 import com.example.ecommerce.catagol.application.model.AuthenticatedUser;
+import com.example.ecommerce.catagol.application.model.Login;
 import com.example.ecommerce.catagol.application.model.Product;
 import com.example.ecommerce.catagol.application.model.Rating;
 import com.example.ecommerce.catagol.application.port.in.LoginCommand;
 import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
-import com.example.ecommerce.catagol.application.port.out.AuditLogRepositoryPort;
-import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
-import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
-import com.example.ecommerce.catagol.application.port.out.TokenProviderPort;
-import com.example.ecommerce.catagol.application.port.out.UserRepositoryPort;
+import com.example.ecommerce.catagol.application.port.out.*;
 import com.example.ecommerce.catagol.application.service.AuthenticationService;
 import com.example.ecommerce.catagol.application.service.AuditLogService;
 import com.example.ecommerce.catagol.application.service.ProductNoteService;
@@ -19,6 +16,7 @@ import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.domain.model.User;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
+import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetails;
 import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -120,8 +118,7 @@ class BeanConfigTest {
 
     var productUseCase = beanConfig.productUseCase(
       externalCatalogPort,
-      productNoteRepositoryPort,
-      auditLogRepositoryPort
+      productNoteRepositoryPort
     );
     var products = productUseCase.getEnrichedCatalog();
 
@@ -132,7 +129,6 @@ class BeanConfigTest {
     assertEquals("", products.get(0).note());
     verify(externalCatalogPort).fetchAllProducts();
     verify(productNoteRepositoryPort).findAll();
-    verify(auditLogRepositoryPort).save(any());
   }
 
   @Test
@@ -140,8 +136,7 @@ class BeanConfigTest {
     when(externalCatalogPort.fetchAllProducts()).thenReturn(List.of());
     var productUseCase = beanConfig.productUseCase(
       externalCatalogPort,
-      productNoteRepositoryPort,
-      auditLogRepositoryPort
+      productNoteRepositoryPort
     );
 
     assertThrows(EmptyProductAPIException.class, productUseCase::getEnrichedCatalog);
@@ -153,11 +148,15 @@ class BeanConfigTest {
 
   @Test
   void createsAuthenticationServiceConnectedToAuthenticationAndTokenProviders() {
+    var loginCommand = new LoginCommand("jane.doe", "correct-password");
     var jwtConfig = new SecurityJwtConfig();
     jwtConfig.setExpiration(900L);
+    var customUserDetails = new CustomUserDetails(loginCommand.username(), loginCommand.password(),
+      List.of(new SimpleGrantedAuthority("ROLE_USER")), "Jane", "Doe");
+
     when(authenticationManager.authenticate(any()))
       .thenReturn(UsernamePasswordAuthenticationToken.authenticated(
-        "jane.doe",
+        customUserDetails,
         null,
         List.of(new SimpleGrantedAuthority("ROLE_USER"))
       ));
@@ -168,9 +167,8 @@ class BeanConfigTest {
       tokenProvider,
       jwtConfig
     );
-    var response = authenticationService.authenticate(
-      new LoginCommand("jane.doe", "correct-password")
-    );
+
+    Login response = authenticationService.authenticate(loginCommand);
 
     assertInstanceOf(AuthenticationService.class, authenticationService);
     assertEquals("signed-token", response.accessToken());
@@ -193,9 +191,9 @@ class BeanConfigTest {
       new SecurityJwtConfig()
     );
 
+    var loginCommand = new LoginCommand("jane.doe", "wrong-password");
     var exception = assertThrows(BadCredentialsException.class,
-      () -> authenticationService.authenticate(new LoginCommand("jane.doe", "wrong-password"))
-    );
+      () -> authenticationService.authenticate(loginCommand));
 
     assertSame(authenticationException, exception);
     verify(tokenProvider, never()).generateToken(any(AuthenticatedUser.class));
@@ -212,8 +210,7 @@ class BeanConfigTest {
         return productNote;
       });
 
-    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
-      auditLogRepositoryPort);
+    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort);
     ProductNote savedProductNote = productNoteService.saveProductNote(productNoteCreateCommand);
 
     var productNote = ProductNote.builder()
@@ -233,8 +230,7 @@ class BeanConfigTest {
       "John Dave");
     var duplicateException = new ProductNoteDuplicateException("The Product Note is duplicate");
     when(productNoteRepositoryPort.save(any(ProductNote.class))).thenThrow(duplicateException);
-    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
-      auditLogRepositoryPort);
+    ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort);
 
     var exception = assertThrows(ProductNoteDuplicateException.class,
       () -> productNoteService.saveProductNote(productNoteCreateCommand)

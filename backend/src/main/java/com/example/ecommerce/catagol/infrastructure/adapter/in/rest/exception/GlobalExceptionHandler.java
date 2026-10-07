@@ -2,6 +2,7 @@ package com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception;
 
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
+import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.FieldError;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ValidationErrorResponse;
@@ -59,6 +60,11 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(EmptyProductNoteException.class)
   public ResponseEntity<String> handleEmptyProductNoteException(EmptyProductNoteException ex) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+  }
+
+  @ExceptionHandler(GenericErrorException.class)
+  public ResponseEntity<String> handleGenericErrorException(GenericErrorException ex) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
   }
 
 

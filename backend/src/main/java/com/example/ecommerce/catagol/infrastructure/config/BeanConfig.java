@@ -21,9 +21,8 @@ public class BeanConfig {
 
   @Bean
   public GetProductUseCase productUseCase(ExternalCatalogPort externalCatalogPort,
-                                          ProductNoteRepositoryPort productNoteRepositoryPort,
-                                          AuditLogRepositoryPort auditLogRepositoryPort) {
-    return new ProductService(externalCatalogPort, productNoteRepositoryPort, auditLogRepositoryPort);
+                                          ProductNoteRepositoryPort productNoteRepositoryPort) {
+    return new ProductService(externalCatalogPort, productNoteRepositoryPort);
   }
 
   @Bean
@@ -34,9 +33,8 @@ public class BeanConfig {
   }
 
   @Bean
-  public ProductNoteService productNoteService(ProductNoteRepositoryPort productNoteRepositoryPort,
-                                               AuditLogRepositoryPort auditLogRepositoryPort) {
-    return new ProductNoteService(productNoteRepositoryPort, auditLogRepositoryPort);
+  public ProductNoteService productNoteService(ProductNoteRepositoryPort productNoteRepositoryPort) {
+    return new ProductNoteService(productNoteRepositoryPort);
   }
 
   @Bean

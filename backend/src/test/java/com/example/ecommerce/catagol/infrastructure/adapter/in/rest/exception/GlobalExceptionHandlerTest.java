@@ -2,6 +2,7 @@ package com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception;
 
 import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
+import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
 import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.AuthController;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.FieldError;
@@ -96,5 +97,14 @@ class GlobalExceptionHandlerTest {
     assertEquals("There are no recorded notes for the products.", response.getBody());
   }
 
+  @Test
+  void returnsInternalServerErrorWithMessageWhenGenericErrorOccurs() {
+    var exception = new GenericErrorException("An generic error occurred.");
+
+    var response = exceptionHandler.handleGenericErrorException(exception);
+
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    assertEquals("An generic error occurred.", response.getBody());
+  }
 
 }
