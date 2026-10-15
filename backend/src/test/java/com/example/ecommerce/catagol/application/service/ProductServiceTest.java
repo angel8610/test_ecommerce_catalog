@@ -5,8 +5,8 @@ import com.example.ecommerce.catagol.application.model.ProductCatalogItem;
 import com.example.ecommerce.catagol.application.model.Rating;
 import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
-import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
+import com.example.ecommerce.catagol.domain.exception.NotFoundResourceException;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,7 +69,7 @@ class ProductServiceTest {
   void throwsEmptyProductApiExceptionWhenCatalogReturnsNoProducts() {
     when(externalCatalogPort.fetchAllProducts()).thenReturn(List.of());
 
-    var exception = assertThrows(EmptyProductAPIException.class, productService::getEnrichedCatalog);
+    var exception = assertThrows(NotFoundResourceException.class, productService::getEnrichedCatalog);
 
     assertEquals("No results were obtained from the API.", exception.getMessage());
     verify(productNoteRepositoryPort, never()).findAll();
@@ -79,7 +79,7 @@ class ProductServiceTest {
   void throwsEmptyProductApiExceptionWhenCatalogReturnsNull() {
     when(externalCatalogPort.fetchAllProducts()).thenReturn(null);
 
-    assertThrows(EmptyProductAPIException.class, productService::getEnrichedCatalog);
+    assertThrows(NotFoundResourceException.class, productService::getEnrichedCatalog);
 
     verify(productNoteRepositoryPort, never()).findAll();
   }

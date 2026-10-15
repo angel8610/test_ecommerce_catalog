@@ -12,11 +12,11 @@ import com.example.ecommerce.catagol.application.service.AuditLogService;
 import com.example.ecommerce.catagol.application.service.ProductNoteService;
 import com.example.ecommerce.catagol.application.service.ProductService;
 import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
+import com.example.ecommerce.catagol.domain.exception.NotFoundResourceException;
 import com.example.ecommerce.catagol.domain.model.AuditLog;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.domain.model.User;
-import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
-import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
+import com.example.ecommerce.catagol.domain.exception.ResourceDuplicateException;
 import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetails;
 import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
@@ -143,7 +143,7 @@ class BeanConfigTest {
       productNoteRepositoryPort
     );
 
-    assertThrows(EmptyProductAPIException.class, productUseCase::getEnrichedCatalog);
+    assertThrows(NotFoundResourceException.class, productUseCase::getEnrichedCatalog);
 
     verify(externalCatalogPort).fetchAllProducts();
     verify(productNoteRepositoryPort, never()).findAll();
@@ -246,14 +246,14 @@ class BeanConfigTest {
   @Test
   void productNoteServicePropagatesDuplicateNoteFailures() {
     var productNoteCreateCommand = new ProductNoteCreateCommand(42L, "Durable material");
-    var duplicateException = new ProductNoteDuplicateException("The Product Note is duplicate");
+    var duplicateException = new ResourceDuplicateException("The Product Note is duplicate");
 
     when(authenticationPort.getAuthenticatedUsername()).thenReturn(Optional.of("my_user"));
     when(productNoteRepositoryPort.save(any(ProductNote.class))).thenThrow(duplicateException);
     ProductNoteService productNoteService = beanConfig.productNoteService(productNoteRepositoryPort,
       authenticationPort);
 
-    var exception = assertThrows(ProductNoteDuplicateException.class,
+    var exception = assertThrows(ResourceDuplicateException.class,
       () -> productNoteService.saveProductNote(productNoteCreateCommand));
 
     assertSame(duplicateException, exception);

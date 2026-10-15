@@ -6,8 +6,8 @@ import com.example.ecommerce.catagol.application.model.Rating;
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
 import com.example.ecommerce.catagol.application.port.out.ExternalCatalogPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
-import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
 import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
+import com.example.ecommerce.catagol.domain.exception.NotFoundResourceException;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.infrastructure.config.audit.Auditable;
 import org.springframework.util.CollectionUtils;
@@ -32,7 +32,7 @@ public class ProductService implements GetProductUseCase {
   public List<ProductCatalogItem> getEnrichedCatalog() {
     var products = this.externalCatalogPort.fetchAllProducts();
     if(CollectionUtils.isEmpty(products)) {
-      throw new EmptyProductAPIException("No results were obtained from the API.");
+      throw new NotFoundResourceException("No results were obtained from the API.");
     }
 
     try {

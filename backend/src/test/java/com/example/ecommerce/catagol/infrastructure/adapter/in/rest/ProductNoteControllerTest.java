@@ -3,8 +3,8 @@ package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 import com.example.ecommerce.catagol.application.port.in.FindAllProductNoteUseCase;
 import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
 import com.example.ecommerce.catagol.application.port.in.SaveProductNoteUseCase;
-import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
-import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
+import com.example.ecommerce.catagol.domain.exception.NotFoundResourceException;
+import com.example.ecommerce.catagol.domain.exception.ResourceDuplicateException;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductNoteResponse;
@@ -85,10 +85,10 @@ class ProductNoteControllerTest {
   void propagatesDuplicateExceptionWhenSavingProductNote() {
     var productNoteRequest = this.createProductNoteRequest(EXT_PROD_ID, NOTE);
     var request = this.getProductNoteCreateCommandFromRequest(productNoteRequest);
-    var duplicateException = new ProductNoteDuplicateException("The Product Note is duplicate");
+    var duplicateException = new ResourceDuplicateException("The Product Note is duplicate");
     when(saveProductNoteUseCase.saveProductNote(request)).thenThrow(duplicateException);
 
-    var exception = assertThrows(ProductNoteDuplicateException.class,
+    var exception = assertThrows(ResourceDuplicateException.class,
       () -> productNoteController.saveProductNote(productNoteRequest));
 
     assertSame(duplicateException, exception);
@@ -129,11 +129,11 @@ class ProductNoteControllerTest {
 
   @Test
   void propagatesEmptyProductNoteExceptionWhenFindingNotes() {
-    var emptyNotesException = new EmptyProductNoteException(
+    var emptyNotesException = new NotFoundResourceException(
       "There are no recorded notes for the products.");
     when(findAllProductNoteUseCase.findAll()).thenThrow(emptyNotesException);
 
-    var exception = assertThrows(EmptyProductNoteException.class, productNoteController::findAll);
+    var exception = assertThrows(NotFoundResourceException.class, productNoteController::findAll);
 
     assertSame(emptyNotesException, exception);
     verify(findAllProductNoteUseCase).findAll();
@@ -194,7 +194,7 @@ class ProductNoteControllerTest {
 
     when(saveProductNoteUseCase.saveProductNote(org.mockito.ArgumentMatchers.any(
       ProductNoteCreateCommand.class))).thenThrow(
-        new ProductNoteDuplicateException("The Product Note is duplicate"));
+        new ResourceDuplicateException("The Product Note is duplicate"));
 
     mockMvc.perform(post("/api/v1/prodnotes")
         .contentType(MediaType.APPLICATION_JSON)
@@ -250,7 +250,7 @@ class ProductNoteControllerTest {
   @Test
   void returnsNotFoundWhenGetRequestFindsNoRecordedNotes() throws Exception {
     when(findAllProductNoteUseCase.findAll())
-      .thenThrow(new EmptyProductNoteException("There are no recorded notes for the products."));
+      .thenThrow(new NotFoundResourceException("There are no recorded notes for the products."));
 
     mockMvc.perform(get("/api/v1/prodnotes"))
       .andExpect(status().isNotFound())

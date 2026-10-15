@@ -5,9 +5,9 @@ import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateComman
 import com.example.ecommerce.catagol.application.port.in.SaveProductNoteUseCase;
 import com.example.ecommerce.catagol.application.port.out.AuthenticationPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
-import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
+import com.example.ecommerce.catagol.domain.exception.NotFoundResourceException;
 import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
-import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
+import com.example.ecommerce.catagol.domain.exception.ResourceDuplicateException;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import com.example.ecommerce.catagol.infrastructure.config.audit.Auditable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,7 +29,7 @@ public class ProductNoteService implements SaveProductNoteUseCase, FindAllProduc
   @Override
   @Auditable(operation = "SAVE PRODUCT NOTE")
   public ProductNote saveProductNote(ProductNoteCreateCommand productNoteCreateCommand)
-      throws GenericErrorException, ProductNoteDuplicateException {
+      throws GenericErrorException, ResourceDuplicateException {
     var createdBy = this.authenticationPort.getAuthenticatedUsername().orElse(null);
     if(createdBy == null) {
       throw new GenericErrorException("Not authenticated user");
@@ -48,7 +48,7 @@ public class ProductNoteService implements SaveProductNoteUseCase, FindAllProduc
     try {
       return this.productNoteRepositoryPort.save(productNote);
     } catch (DataIntegrityViolationException ex) {
-      throw new ProductNoteDuplicateException("The Product Note is duplicate");
+      throw new ResourceDuplicateException("The Product Note is duplicate");
     }
   }
 
@@ -57,7 +57,7 @@ public class ProductNoteService implements SaveProductNoteUseCase, FindAllProduc
     List<ProductNote> productNotes = this.productNoteRepositoryPort.findAll();
 
     if(CollectionUtils.isEmpty(productNotes)) {
-      throw new EmptyProductNoteException("There are no recorded notes for the products.");
+      throw new NotFoundResourceException("There are no recorded notes for the products.");
     }
     return productNotes;
   }

@@ -3,7 +3,7 @@ package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 import com.example.ecommerce.catagol.application.model.ProductCatalogItem;
 import com.example.ecommerce.catagol.application.model.Rating;
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
-import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
+import com.example.ecommerce.catagol.domain.exception.NotFoundResourceException;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ProductResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.RatingResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception.GlobalExceptionHandler;
@@ -90,10 +90,10 @@ class ProductControllerTest {
 
   @Test
   void propagatesEmptyProductApiExceptionWhenUseCaseHasNoCatalogResults() {
-    var emptyCatalogException = new EmptyProductAPIException("No results were obtained from the API.");
+    var emptyCatalogException = new NotFoundResourceException("No results were obtained from the API.");
     when(productUseCase.getEnrichedCatalog()).thenThrow(emptyCatalogException);
 
-    var exception = assertThrows(EmptyProductAPIException.class, productController::findAll);
+    var exception = assertThrows(NotFoundResourceException.class, productController::findAll);
 
     assertSame(emptyCatalogException, exception);
     verify(productUseCase).getEnrichedCatalog();
@@ -136,7 +136,7 @@ class ProductControllerTest {
   @Test
   void returnsNotFoundWhenProductsEndpointHasNoCatalogResults() throws Exception {
     when(productUseCase.getEnrichedCatalog())
-      .thenThrow(new EmptyProductAPIException("No results were obtained from the API."));
+      .thenThrow(new NotFoundResourceException("No results were obtained from the API."));
 
     mockMvc.perform(get("/api/v1/products"))
       .andExpect(status().isNotFound())

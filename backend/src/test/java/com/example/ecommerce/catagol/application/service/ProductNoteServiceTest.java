@@ -3,9 +3,9 @@ package com.example.ecommerce.catagol.application.service;
 import com.example.ecommerce.catagol.application.port.in.ProductNoteCreateCommand;
 import com.example.ecommerce.catagol.application.port.out.AuthenticationPort;
 import com.example.ecommerce.catagol.application.port.out.ProductNoteRepositoryPort;
-import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
+import com.example.ecommerce.catagol.domain.exception.NotFoundResourceException;
 import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
-import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
+import com.example.ecommerce.catagol.domain.exception.ResourceDuplicateException;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,7 +89,7 @@ class ProductNoteServiceTest {
     when(productNoteRepositoryPort.save(any(ProductNote.class)))
       .thenThrow(new DataIntegrityViolationException("Duplicate note"));
 
-    var exception = assertThrows(ProductNoteDuplicateException.class,
+    var exception = assertThrows(ResourceDuplicateException.class,
       () -> productNoteService.saveProductNote(productNoteCreateCommand)
     );
 
@@ -130,7 +130,7 @@ class ProductNoteServiceTest {
   void throwsEmptyProductNoteExceptionWhenRepositoryReturnsNoNotes() {
     when(productNoteRepositoryPort.findAll()).thenReturn(List.of());
 
-    var exception = assertThrows(EmptyProductNoteException.class, productNoteService::findAll);
+    var exception = assertThrows(NotFoundResourceException.class, productNoteService::findAll);
 
     assertEquals("There are no recorded notes for the products.", exception.getMessage());
     verify(productNoteRepositoryPort).findAll();
@@ -140,7 +140,7 @@ class ProductNoteServiceTest {
   void throwsEmptyProductNoteExceptionWhenRepositoryReturnsNull() {
     when(productNoteRepositoryPort.findAll()).thenReturn(null);
 
-    assertThrows(EmptyProductNoteException.class, productNoteService::findAll);
+    assertThrows(NotFoundResourceException.class, productNoteService::findAll);
     verify(productNoteRepositoryPort).findAll();
   }
 

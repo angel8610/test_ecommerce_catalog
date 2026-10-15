@@ -1,9 +1,6 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception;
 
-import com.example.ecommerce.catagol.domain.exception.EmptyProductAPIException;
-import com.example.ecommerce.catagol.domain.exception.EmptyProductNoteException;
-import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
-import com.example.ecommerce.catagol.domain.exception.ProductNoteDuplicateException;
+import com.example.ecommerce.catagol.domain.exception.*;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.FieldError;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.ValidationErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -14,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @RestControllerAdvice
@@ -38,7 +36,7 @@ public class GlobalExceptionHandler {
 
     ValidationErrorResponse response =
       new ValidationErrorResponse(
-        LocalDateTime.now(),
+        LocalDateTime.now(ZoneId.systemDefault()),
         HttpStatus.BAD_REQUEST.value(),
         "Validation failed",
         errors
@@ -47,18 +45,13 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest().body(response);
   }
 
-  @ExceptionHandler(ProductNoteDuplicateException.class)
-  public ResponseEntity<String> handleProductNoteDuplicateException(ProductNoteDuplicateException ex) {
+  @ExceptionHandler(ResourceDuplicateException.class)
+  public ResponseEntity<String> handleResourceDuplicateException(ResourceDuplicateException ex) {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
   }
 
-  @ExceptionHandler(EmptyProductAPIException.class)
-  public ResponseEntity<String> handleEmptyProductAPIException(EmptyProductAPIException ex) {
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-  }
-
-  @ExceptionHandler(EmptyProductNoteException.class)
-  public ResponseEntity<String> handleEmptyProductNoteException(EmptyProductNoteException ex) {
+  @ExceptionHandler(NotFoundResourceException.class)
+  public ResponseEntity<String> handleNotFoundResourceException(NotFoundResourceException ex) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
   }
 
