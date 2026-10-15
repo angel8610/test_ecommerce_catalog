@@ -13,7 +13,7 @@ CREATE TABLE roles(
 	description     VARCHAR(100),
 	user_id         BIGINT      NOT NULL,
 	CONSTRAINT pk_roles PRIMARY KEY (role_id),
-	CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(user_id)
+	CONSTRAINT fk_roles_user FOREIGN KEY(user_id) REFERENCES users(user_id)
 );
 
 CREATE TABLE product_notes (
@@ -45,3 +45,20 @@ CREATE TABLE audit_logs (
 
 CREATE INDEX idx_audit_logs_regis_date ON audit_logs (regis_date DESC);
 CREATE INDEX idx_audit_logs_operation_type ON audit_logs (operation_type);
+
+CREATE TABLE refresh_tokens (
+    id           UUID PRIMARY KEY,
+    user_id      BIGINT      NOT NULL,
+    token_hash   VARCHAR(64) NOT NULL UNIQUE,  -- SHA-256 en hex
+    family_id    UUID        NOT NULL,
+    expires_at   TIMESTAMP   NOT NULL,
+    revoked_at   TIMESTAMP,
+    replaced_by  VARCHAR(64),
+    created_at   TIMESTAMP   NOT NULL,
+    user_agent   VARCHAR(255),
+    ip_address   VARCHAR(45),
+	CONSTRAINT fk_refresh_tokens_user FOREIGN KEY(user_id) REFERENCES users(user_id)
+);
+
+CREATE INDEX idx_refresh_tokens_user   ON refresh_tokens(user_id);
+CREATE INDEX idx_refresh_tokens_family ON refresh_tokens(family_id);

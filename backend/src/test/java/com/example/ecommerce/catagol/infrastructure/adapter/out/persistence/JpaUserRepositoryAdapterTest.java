@@ -98,5 +98,61 @@ class JpaUserRepositoryAdapterTest {
     verify(spingDataUserRepository).findByUsername("jane.doe");
   }
 
+  @Test
+  void returnsMappedUserWithPersonalDetailsAndRolesWhenUserIdExists() {
+    var userEntity = UserJpaEntity.builder()
+      .userId(7L)
+      .username("jane.doe")
+      .password("encoded-password")
+      .firstName("Jane")
+      .lastName("Doe")
+      .roles(List.of(
+        RoleJpaEntity.builder()
+          .roleId(2L)
+          .name("ROLE_USER")
+          .description("Standard user")
+          .userId(7L)
+          .build()
+      ))
+      .build();
+    when(spingDataUserRepository.findById(7L)).thenReturn(Optional.of(userEntity));
+
+    Optional<User> result = adapter.findByUserId(7L);
+
+    assertEquals(
+      Optional.of(User.builder()
+        .id(7L)
+        .username("jane.doe")
+        .password("encoded-password")
+        .firstName("Jane")
+        .lastName("Doe")
+        .roles(List.of(new Role(2L, "ROLE_USER", "Standard user", 7L)))
+        .build()),
+      result
+    );
+    verify(spingDataUserRepository).findById(7L);
+  }
+
+  @Test
+  void returnsEmptyWhenUserIdDoesNotExist() {
+    when(spingDataUserRepository.findById(99L)).thenReturn(Optional.empty());
+
+    Optional<User> result = adapter.findByUserId(99L);
+
+    assertEquals(Optional.empty(), result);
+    verify(spingDataUserRepository).findById(99L);
+  }
+
+  @Test
+  void propagatesRepositoryErrorsWhenSearchingByUserId() {
+    var repositoryException = new IllegalStateException("User database unavailable");
+    when(spingDataUserRepository.findById(7L)).thenThrow(repositoryException);
+
+    var exception = assertThrows(IllegalStateException.class, () -> adapter.findByUserId(7L));
+
+    assertSame(repositoryException, exception);
+    verify(spingDataUserRepository).findById(7L);
+  }
+
 
 }

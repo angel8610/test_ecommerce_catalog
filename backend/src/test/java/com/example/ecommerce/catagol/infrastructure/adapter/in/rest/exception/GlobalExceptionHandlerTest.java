@@ -3,6 +3,7 @@ package com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception;
 import com.example.ecommerce.catagol.domain.exception.NotFoundResourceException;
 import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
 import com.example.ecommerce.catagol.domain.exception.ResourceDuplicateException;
+import com.example.ecommerce.catagol.domain.exception.UnauthorizedException;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.AuthController;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.FieldError;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
@@ -67,37 +68,17 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
-  void returnsConflictWithMessageWhenProductNoteIsDuplicate() {
-    var exception = new ResourceDuplicateException("The Product Note is duplicate");
-
-    var response = exceptionHandler.handleResourceDuplicateException(exception);
-
-    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-    assertEquals("The Product Note is duplicate", response.getBody());
-  }
-
-  @Test
-  void returnsNotFoundWithMessageWhenProductCatalogIsEmpty() {
-    var exception = new NotFoundResourceException("No results were obtained from the API.");
+  void returnsNotFoundWhenResourceNotFound() {
+    var exception = new NotFoundResourceException("Resource not found.");
 
     var response = exceptionHandler.handleNotFoundResourceException(exception);
 
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    assertEquals("No results were obtained from the API.", response.getBody());
+    assertEquals("Resource not found.", response.getBody());
   }
 
   @Test
-  void returnsNotFoundWithMessageWhenProductNotesAreEmpty() {
-    var exception = new NotFoundResourceException("There are no recorded notes for the products.");
-
-    var response = exceptionHandler.handleNotFoundResourceException(exception);
-
-    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    assertEquals("There are no recorded notes for the products.", response.getBody());
-  }
-
-  @Test
-  void returnsInternalServerErrorWithMessageWhenGenericErrorOccurs() {
+  void returnsInternalServerErrorWhenGenericErrorOccurs() {
     var exception = new GenericErrorException("An generic error occurred.");
 
     var response = exceptionHandler.handleGenericErrorException(exception);
@@ -105,5 +86,26 @@ class GlobalExceptionHandlerTest {
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     assertEquals("An generic error occurred.", response.getBody());
   }
+
+  @Test
+  void returnsDuplicateResourceWhenResourceIsDuplicate() {
+    var exception = new ResourceDuplicateException("The resource is duplicate.");
+
+    var response = exceptionHandler.handleResourceDuplicateException(exception);
+
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals("The resource is duplicate.", response.getBody());
+  }
+
+  @Test
+  void returnsUnauthorizedWhenUserIsUnauthorized() {
+    var exception = new UnauthorizedException("The resource is unauthorized.");
+
+    var response = exceptionHandler.handleUnauthorizedException(exception);
+
+    assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    assertEquals("The resource is unauthorized.", response.getBody());
+  }
+
 
 }

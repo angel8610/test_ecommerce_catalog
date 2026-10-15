@@ -8,5 +8,7 @@ public interface UserRepositoryPort {
 
   Optional<User> findByUsername(String username);
 
+  Optional<User> findByUserId(Long userId);
+
 
 }

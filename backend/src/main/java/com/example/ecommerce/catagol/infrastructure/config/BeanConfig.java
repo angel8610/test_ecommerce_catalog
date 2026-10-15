@@ -2,14 +2,13 @@ package com.example.ecommerce.catagol.infrastructure.config;
 
 import com.example.ecommerce.catagol.application.port.in.GetProductUseCase;
 import com.example.ecommerce.catagol.application.port.out.*;
-import com.example.ecommerce.catagol.application.service.AuditLogService;
-import com.example.ecommerce.catagol.application.service.AuthenticationService;
-import com.example.ecommerce.catagol.application.service.ProductNoteService;
-import com.example.ecommerce.catagol.application.service.ProductService;
+import com.example.ecommerce.catagol.application.service.*;
 import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+
+import java.time.Clock;
 
 @Configuration
 public class BeanConfig {
@@ -41,6 +40,16 @@ public class BeanConfig {
   @Bean
   public AuditLogService auditLogService(AuditLogRepositoryPort auditLogRepositoryPort) {
     return new AuditLogService(auditLogRepositoryPort);
+  }
+
+  @Bean
+  public RefreshTokenService refreshTokenService(Clock clock, RefreshTokenPort refreshTokenPort,
+                                                 RefreshTokenGeneratorPort refreshTokenGeneratorPort,
+                                                 UserRepositoryPort userRepositoryPort,
+                                                 TokenProviderPort tokenProviderPort,
+                                                 SecurityRefreshConfig securityRefreshConfig) {
+    return new RefreshTokenService(clock, refreshTokenPort, refreshTokenGeneratorPort, userRepositoryPort,
+      tokenProviderPort, securityRefreshConfig);
   }
 
 

@@ -11,10 +11,12 @@ import com.example.ecommerce.catagol.application.service.AuthenticationService;
 import com.example.ecommerce.catagol.application.service.AuditLogService;
 import com.example.ecommerce.catagol.application.service.ProductNoteService;
 import com.example.ecommerce.catagol.application.service.ProductService;
+import com.example.ecommerce.catagol.application.service.RefreshTokenService;
 import com.example.ecommerce.catagol.domain.exception.GenericErrorException;
 import com.example.ecommerce.catagol.domain.exception.NotFoundResourceException;
 import com.example.ecommerce.catagol.domain.model.AuditLog;
 import com.example.ecommerce.catagol.domain.model.ProductNote;
+import com.example.ecommerce.catagol.domain.model.RefreshToken;
 import com.example.ecommerce.catagol.domain.model.User;
 import com.example.ecommerce.catagol.domain.exception.ResourceDuplicateException;
 import com.example.ecommerce.catagol.infrastructure.adapter.out.security.CustomUserDetails;
@@ -32,7 +34,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -69,6 +74,12 @@ class BeanConfigTest {
 
   @Mock
   private AuthenticationPort authenticationPort;
+
+  @Mock
+  private RefreshTokenPort refreshTokenPort;
+
+  @Mock
+  private RefreshTokenGeneratorPort refreshTokenGeneratorPort;
 
   private BeanConfig beanConfig;
 
@@ -289,6 +300,52 @@ class BeanConfigTest {
       null
     )), responses);
     verify(auditLogRepositoryPort).findAll();
+  }
+
+  @Test
+  void createsRefreshTokenServiceConnectedToItsDependencies() {
+    Instant now = Instant.parse("2026-10-14T12:00:00Z");
+    Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+    SecurityRefreshConfig refreshConfig = new SecurityRefreshConfig();
+    refreshConfig.setExpirationDays(30L);
+    var user = User.builder()
+      .id(7L)
+      .username("jane.doe")
+      .password("encoded-password")
+      .roles(List.of())
+      .build();
+    when(userRepositoryPort.findByUsername("jane.doe")).thenReturn(Optional.of(user));
+    when(refreshTokenGeneratorPort.generateRawToken()).thenReturn("raw-refresh-token");
+    when(refreshTokenGeneratorPort.hash("raw-refresh-token")).thenReturn("hashed-refresh-token");
+
+    RefreshTokenService refreshTokenService = beanConfig.refreshTokenService(clock, refreshTokenPort,
+      refreshTokenGeneratorPort, userRepositoryPort, tokenProvider, refreshConfig);
+
+    var result = refreshTokenService.generateRefreshToken("jane.doe");
+
+    assertInstanceOf(RefreshTokenService.class, refreshTokenService);
+    assertEquals("raw-refresh-token", result.refreshToken());
+    var tokenCaptor = ArgumentCaptor.forClass(RefreshToken.class);
+    verify(refreshTokenPort).save(tokenCaptor.capture());
+    assertEquals(7L, tokenCaptor.getValue().getUserId());
+    assertEquals("hashed-refresh-token", tokenCaptor.getValue().getTokenHash());
+    assertEquals(now.plusSeconds(30L * 24 * 60 * 60), tokenCaptor.getValue().getExpiresAt());
+    verify(refreshTokenGeneratorPort).generateRawToken();
+    verify(refreshTokenGeneratorPort).hash("raw-refresh-token");
+  }
+
+  @Test
+  void refreshTokenServiceDoesNotGenerateTokenWhenUserIsNotFound() {
+    when(userRepositoryPort.findByUsername("unknown")).thenReturn(Optional.empty());
+    RefreshTokenService refreshTokenService = beanConfig.refreshTokenService(
+      Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), refreshTokenPort, refreshTokenGeneratorPort,
+      userRepositoryPort, tokenProvider, new SecurityRefreshConfig());
+
+    assertThrows(GenericErrorException.class,
+      () -> refreshTokenService.generateRefreshToken("unknown"));
+
+    verify(refreshTokenGeneratorPort, never()).generateRawToken();
+    verify(refreshTokenPort, never()).save(any(RefreshToken.class));
   }
 
 

@@ -1,18 +1,22 @@
 package com.example.ecommerce.catagol.infrastructure.adapter.in.rest;
 
+import com.example.ecommerce.catagol.application.model.AuthRefreshToken;
 import com.example.ecommerce.catagol.application.model.AuthenticatedUser;
 import com.example.ecommerce.catagol.application.model.Login;
-import com.example.ecommerce.catagol.application.port.in.AuthenticateUserUseCase;
-import com.example.ecommerce.catagol.application.port.in.LoginCommand;
+import com.example.ecommerce.catagol.application.port.in.*;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.AuthenticatedUserResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.dto.LoginResponse;
 import com.example.ecommerce.catagol.infrastructure.adapter.in.rest.exception.GlobalExceptionHandler;
+import com.example.ecommerce.catagol.domain.exception.UnauthorizedException;
+import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +30,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -39,15 +44,24 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
 
+  private static final String REFRESH_TOKEN = "12345abcde";
+
   @Mock
   private AuthenticateUserUseCase authenticateUserUseCase;
+  @Mock
+  private GenerateRefreshTokenUseCase generateRefreshTokenUseCase;
+  @Mock
+  private GetRefreshTokenUseCase getRefreshTokenUseCase;
+  @Mock
+  private LogoutUseCase logoutUseCase;
 
   private AuthController authController;
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
-    authController = new AuthController(authenticateUserUseCase);
+    authController = new AuthController(authenticateUserUseCase, generateRefreshTokenUseCase,
+      getRefreshTokenUseCase, logoutUseCase);
     var validator = new LocalValidatorFactoryBean();
     validator.afterPropertiesSet();
     mockMvc = standaloneSetup(authController)
@@ -66,9 +80,11 @@ class AuthControllerTest {
     var userResponse = new AuthenticatedUserResponse(user.userId(), user.username(),
       user.roles(), user.firstName(), user.lastName());
     var loginResponse = new LoginResponse(login.accessToken(), login.tokenType(), login.expiresIn(),
-      userResponse);
+      REFRESH_TOKEN, userResponse);
 
     when(authenticateUserUseCase.authenticate(loginCommand)).thenReturn(login);
+    when(generateRefreshTokenUseCase.generateRefreshToken(loginRequest.username())).thenReturn(
+      new AuthRefreshToken(null, REFRESH_TOKEN));
 
     ResponseEntity<LoginResponse> response = authController.login(loginRequest);
 
@@ -100,6 +116,8 @@ class AuthControllerTest {
 
     when(authenticateUserUseCase.authenticate(loginCommand))
       .thenReturn(new Login("signed-jwt", "Bearer", 900L, user));
+    when(generateRefreshTokenUseCase.generateRefreshToken(loginRequest.username())).thenReturn(
+      new AuthRefreshToken(null, REFRESH_TOKEN));
 
     mockMvc.perform(post("/api/auth/login")
         .contentType(MediaType.APPLICATION_JSON)
@@ -114,6 +132,7 @@ class AuthControllerTest {
       .andExpect(jsonPath("$.accessToken").value("signed-jwt"))
       .andExpect(jsonPath("$.tokenType").value("Bearer"))
       .andExpect(jsonPath("$.expiresIn").value(900))
+      .andExpect(jsonPath("$.refreshToken").value(REFRESH_TOKEN))
       .andExpect(jsonPath("$.user.userId").value("username"))
       .andExpect(jsonPath("$.user.username").value("username"))
       .andExpect(jsonPath("$.user.roles").isArray())
@@ -162,6 +181,87 @@ class AuthControllerTest {
 
     verify(authenticateUserUseCase).authenticate(
       new LoginCommand("unknown", "some-password"));
+  }
+
+  @Test
+  void returnsUnauthorizedWhenRefreshCookieIsMissing() throws Exception {
+    mockMvc.perform(post("/api/auth/refresh"))
+      .andExpect(status().isUnauthorized())
+      .andExpect(content().string(""));
+
+    verifyNoInteractions(getRefreshTokenUseCase);
+  }
+
+  @Test
+  void returnsNewAccessTokenAndRefreshCookieWhenRefreshSucceeds() throws Exception {
+    when(getRefreshTokenUseCase.getRefreshToken(REFRESH_TOKEN))
+      .thenReturn(new AuthRefreshToken("new-access-token", "rotated-refresh-token"));
+
+    var response = mockMvc.perform(post("/api/auth/refresh")
+        .cookie(new Cookie("refreshToken", REFRESH_TOKEN)))
+      .andExpect(status().isOk())
+      .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+      .andExpect(jsonPath("$.accessToken").value("new-access-token"))
+      .andReturn()
+      .getResponse();
+
+    String setCookie = response.getHeader(HttpHeaders.SET_COOKIE);
+    Assertions.assertNotNull(setCookie);
+    assertTrue(setCookie.contains("refreshToken=rotated-refresh-token"));
+    assertTrue(setCookie.contains("HttpOnly"));
+    assertTrue(setCookie.contains("Secure"));
+    assertTrue(setCookie.contains("SameSite=Strict"));
+    assertTrue(setCookie.contains("Path=/api/auth"));
+    assertTrue(setCookie.contains("Max-Age=604800"));
+    verify(getRefreshTokenUseCase).getRefreshToken(REFRESH_TOKEN);
+  }
+
+  @Test
+  void returnsUnauthorizedWhenRefreshUseCaseRejectsToken() throws Exception {
+    when(getRefreshTokenUseCase.getRefreshToken(REFRESH_TOKEN))
+      .thenThrow(new UnauthorizedException("Token is expired"));
+
+    mockMvc.perform(post("/api/auth/refresh")
+        .cookie(new Cookie("refreshToken", REFRESH_TOKEN)))
+      .andExpect(status().isUnauthorized())
+      .andExpect(content().string("Token is expired"));
+
+    verify(getRefreshTokenUseCase).getRefreshToken(REFRESH_TOKEN);
+  }
+
+  @Test
+  void clearsRefreshCookieAndLogsOutWhenCookieIsPresent() throws Exception {
+    var response = mockMvc.perform(post("/api/auth/logout")
+        .cookie(new Cookie("refreshToken", REFRESH_TOKEN)))
+      .andExpect(status().isNoContent())
+      .andExpect(content().string(""))
+      .andReturn()
+      .getResponse();
+
+    String setCookie = response.getHeader(HttpHeaders.SET_COOKIE);
+    Assertions.assertNotNull(setCookie);
+    assertTrue(setCookie.contains("refreshToken="));
+    assertTrue(setCookie.contains("HttpOnly"));
+    assertTrue(setCookie.contains("Secure"));
+    assertTrue(setCookie.contains("SameSite=Strict"));
+    assertTrue(setCookie.contains("Path=/api/auth"));
+    assertTrue(setCookie.contains("Max-Age=0"));
+    verify(logoutUseCase).logout(REFRESH_TOKEN);
+  }
+
+  @Test
+  void clearsRefreshCookieWithoutCallingLogoutWhenCookieIsMissing() throws Exception {
+    var response = mockMvc.perform(post("/api/auth/logout"))
+      .andExpect(status().isNoContent())
+      .andExpect(content().string(""))
+      .andReturn()
+      .getResponse();
+
+    String setCookie = response.getHeader(HttpHeaders.SET_COOKIE);
+    Assertions.assertNotNull(setCookie);
+    assertTrue(setCookie.contains("refreshToken="));
+    assertTrue(setCookie.contains("Max-Age=0"));
+    verifyNoInteractions(logoutUseCase);
   }
 
 
