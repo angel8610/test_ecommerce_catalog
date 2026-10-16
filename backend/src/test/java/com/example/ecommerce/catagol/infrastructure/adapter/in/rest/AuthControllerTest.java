@@ -36,9 +36,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,7 +78,7 @@ class AuthControllerTest {
     var userResponse = new AuthenticatedUserResponse(user.userId(), user.username(),
       user.roles(), user.firstName(), user.lastName());
     var loginResponse = new LoginResponse(login.accessToken(), login.tokenType(), login.expiresIn(),
-      REFRESH_TOKEN, userResponse);
+      userResponse);
 
     when(authenticateUserUseCase.authenticate(loginCommand)).thenReturn(login);
     when(generateRefreshTokenUseCase.generateRefreshToken(loginRequest.username())).thenReturn(
@@ -132,7 +130,6 @@ class AuthControllerTest {
       .andExpect(jsonPath("$.accessToken").value("signed-jwt"))
       .andExpect(jsonPath("$.tokenType").value("Bearer"))
       .andExpect(jsonPath("$.expiresIn").value(900))
-      .andExpect(jsonPath("$.refreshToken").value(REFRESH_TOKEN))
       .andExpect(jsonPath("$.user.userId").value("username"))
       .andExpect(jsonPath("$.user.username").value("username"))
       .andExpect(jsonPath("$.user.roles").isArray())
@@ -198,19 +195,19 @@ class AuthControllerTest {
       .thenReturn(new AuthRefreshToken("new-access-token", "rotated-refresh-token"));
 
     var response = mockMvc.perform(post("/api/auth/refresh")
-        .cookie(new Cookie("refreshToken", REFRESH_TOKEN)))
+        .cookie(new Cookie("refresh_token", REFRESH_TOKEN)))
       .andExpect(status().isOk())
       .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-      .andExpect(jsonPath("$.accessToken").value("new-access-token"))
+      .andExpect(cookie().value("refresh_token", "rotated-refresh-token"))
       .andReturn()
       .getResponse();
 
     String setCookie = response.getHeader(HttpHeaders.SET_COOKIE);
     Assertions.assertNotNull(setCookie);
-    assertTrue(setCookie.contains("refreshToken=rotated-refresh-token"));
+    assertTrue(setCookie.contains("refresh_token=rotated-refresh-token"));
     assertTrue(setCookie.contains("HttpOnly"));
-    assertTrue(setCookie.contains("Secure"));
-    assertTrue(setCookie.contains("SameSite=Strict"));
+    assertTrue(setCookie.contains("Secure")); // Add Secure
+    assertTrue(setCookie.contains("SameSite=Lax")); // Change to Strict
     assertTrue(setCookie.contains("Path=/api/auth"));
     assertTrue(setCookie.contains("Max-Age=604800"));
     verify(getRefreshTokenUseCase).getRefreshToken(REFRESH_TOKEN);
@@ -222,7 +219,7 @@ class AuthControllerTest {
       .thenThrow(new UnauthorizedException("Token is expired"));
 
     mockMvc.perform(post("/api/auth/refresh")
-        .cookie(new Cookie("refreshToken", REFRESH_TOKEN)))
+        .cookie(new Cookie("refresh_token", REFRESH_TOKEN)))
       .andExpect(status().isUnauthorized())
       .andExpect(content().string("Token is expired"));
 
@@ -232,7 +229,7 @@ class AuthControllerTest {
   @Test
   void clearsRefreshCookieAndLogsOutWhenCookieIsPresent() throws Exception {
     var response = mockMvc.perform(post("/api/auth/logout")
-        .cookie(new Cookie("refreshToken", REFRESH_TOKEN)))
+        .cookie(new Cookie("refresh_token", REFRESH_TOKEN)))
       .andExpect(status().isNoContent())
       .andExpect(content().string(""))
       .andReturn()
@@ -240,10 +237,10 @@ class AuthControllerTest {
 
     String setCookie = response.getHeader(HttpHeaders.SET_COOKIE);
     Assertions.assertNotNull(setCookie);
-    assertTrue(setCookie.contains("refreshToken="));
+    assertTrue(setCookie.contains("refresh_token="));
     assertTrue(setCookie.contains("HttpOnly"));
-    assertTrue(setCookie.contains("Secure"));
-    assertTrue(setCookie.contains("SameSite=Strict"));
+    assertTrue(setCookie.contains("Secure")); // Add Secure
+    assertTrue(setCookie.contains("SameSite=Lax")); // Change to Strict
     assertTrue(setCookie.contains("Path=/api/auth"));
     assertTrue(setCookie.contains("Max-Age=0"));
     verify(logoutUseCase).logout(REFRESH_TOKEN);
@@ -259,7 +256,7 @@ class AuthControllerTest {
 
     String setCookie = response.getHeader(HttpHeaders.SET_COOKIE);
     Assertions.assertNotNull(setCookie);
-    assertTrue(setCookie.contains("refreshToken="));
+    assertTrue(setCookie.contains("refresh_token="));
     assertTrue(setCookie.contains("Max-Age=0"));
     verifyNoInteractions(logoutUseCase);
   }

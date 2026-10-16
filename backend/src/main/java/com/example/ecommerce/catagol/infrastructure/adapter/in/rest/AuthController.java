@@ -53,15 +53,18 @@ public class AuthController {
       login.accessToken(),
       login.tokenType(),
       login.expiresIn(),
-      refreshToken.refreshToken(),
       userResponse
     );
-    return ResponseEntity.ok(loginResponse);
+    var refreshCookie = refreshCookie(refreshToken.refreshToken(), Duration.ofDays(7)).toString();
+
+    return ResponseEntity.ok()
+      .header(HttpHeaders.SET_COOKIE, refreshCookie)
+      .body(loginResponse);
   }
 
   @PostMapping("/refresh")
   public ResponseEntity<AccessTokenResponse> refresh(
-    @CookieValue(name = "refreshToken", required = false) String refreshToken) {
+    @CookieValue(name = "refresh_token", required = false) String refreshToken) {
     if(refreshToken == null) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
@@ -75,7 +78,7 @@ public class AuthController {
 
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(
-    @CookieValue(name = "refreshToken", required = false) String refreshToken) {
+    @CookieValue(name = "refresh_token", required = false) String refreshToken) {
     if(refreshToken != null) {
       this.logoutUseCase.logout(refreshToken);
     }
@@ -85,10 +88,10 @@ public class AuthController {
   }
 
   private ResponseCookie refreshCookie(String value, Duration maxAge) {
-    return ResponseCookie.from("refreshToken", value)
+    return ResponseCookie.from("refresh_token", value)
       .httpOnly(true)
-      .secure(true)
-      .sameSite("Strict")
+      .secure(true) // Change to true for production
+      .sameSite("Lax") // Change to Strict for production
       .path("/api/auth")
       .maxAge(maxAge)
       .build();
