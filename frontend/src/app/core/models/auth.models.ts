@@ -7,8 +7,13 @@ export interface LoginResponse {
   accessToken: string;
   tokenType: string;
   expiresIn: number;
+  user: AuthenticatedUserResponse;
 }
 
-export interface AuthUser {
+export interface AuthenticatedUserResponse {
+  userId: string;
   username: string;
+  roles: string[];
+  firstName: string;
+  lastName: string;
 }
